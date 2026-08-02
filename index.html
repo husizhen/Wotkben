@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="邢怀振工作台">
+<meta name="theme-color" content="#5BA888">
+<title>邢怀振工作台</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+<style>
+:root {
+  --green: #5BA888;
+  --green-dark: #4A8C70;
+  --green-light: #8DD5B0;
+  --green-soft: #E0F3E9;
+  --green-bg: #F2F9F4;
+  --green-bg2: #E8F5EE;
+  --green-text: #2D5C46;
+  --orange: #FF9F43;
+  --orange-soft: #FFF3E0;
+  --blue: #4A90D9;
+  --blue-soft: #E3F2FD;
+  --red: #FF6B6B;
+  --purple: #AB47BC;
+  --purple-soft: #F3E5F5;
+  --text: #1a1a1a;
+  --text2: #555;
+  --text3: #999;
+  --white: #fff;
+  --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 24px;
+  --sh: 0 1px 6px rgba(91,168,136,0.08);
+  --sh2: 0 2px 12px rgba(91,168,136,0.12);
+  --safe-t: env(safe-area-inset-top,0px);
+  --safe-b: env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',sans-serif;background:var(--green-bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{min-height:100vh}
+::-webkit-scrollbar{display:none}
+.hdr{background:var(--green);padding:calc(var(--safe-t)+10px) 14px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;color:#fff;border-radius:0 0 20px 20px;box-shadow:0 2px 8px rgba(91,168,136,0.2)}
+.hdr .menu{background:rgba(255,255,255,.2);border:none;width:36px;height:36px;border-radius:10px;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.hdr .tt{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:600}
+.hdr .dt{font-size:12px;opacity:.9}
+.drawer-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;opacity:0;pointer-events:none;transition:opacity .3s}
+.drawer-bg.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:230px;background:var(--green-soft);z-index:200;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;padding-top:var(--safe-t);border-right:1px solid var(--green-light)}
+.drawer.on{transform:translateX(0)}
+.drawer-hd{padding:16px;background:var(--green);color:#fff;border-radius:0 0 16px 16px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.drawer-av{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px}
+.drawer-nm{font-size:14px;font-weight:600}
+.drawer-sub{font-size:11px;opacity:.85}
+.drawer-nav{flex:1;overflow-y:auto;padding:6px 8px}
+.dn-item{display:flex;align-items:center;gap:10px;padding:11px 12px;margin-bottom:3px;border-radius:12px;cursor:pointer;transition:all .15s;color:var(--text2);font-size:14px}
+.dn-item .e{font-size:18px;width:24px;text-align:center}
+.dn-item.on{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(91,168,136,.3)}
+.dn-item:active{transform:scale(.98)}
+.drawer-ft{padding:10px 16px calc(10px + var(--safe-b));border-top:1px solid var(--green-light);font-size:10px;color:var(--text3);text-align:center}
+.pg{display:none;padding:12px 14px 90px;animation:fi .3s ease}
+.pg.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.cd{background:var(--white);border-radius:var(--r-lg);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
+.cd-soft{background:var(--green-soft)}
+.cd-green{background:linear-gradient(135deg,var(--green),var(--green-dark));color:#fff}
+.cd-orange{background:linear-gradient(135deg,var(--orange),#FF8C42);color:#fff}
+.sh-r{display:flex;align-items:center;justify-content:space-between;padding:6px 4px;margin-bottom:8px}
+.sh-t{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:var(--green-text)}
+.sh-t .e{font-size:18px}
+.sh-a{font-size:12px;color:var(--green-dark);cursor:pointer;font-weight:500}
+.btn{border:none;border-radius:var(--r-md);padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:5px;font-family:inherit}
+.btn-p{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(91,168,136,.3)}
+.btn-p:active{transform:scale(.97)}
+.btn-o{background:transparent;border:1.5px solid var(--green);color:var(--green-dark)}
+.btn-blk{width:100%}
+.btn-pill{border-radius:999px}
+.task{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--green-soft)}
+.task:last-child{border-bottom:none}
+.ck{width:22px;height:22px;border-radius:7px;border:2px solid var(--green-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .15s;background:#fff}
+.ck.on{background:var(--green);border-color:var(--green)}
+.ck svg{width:14px;height:14px;color:#fff;opacity:0}
+.ck.on svg{opacity:1}
+.task .tx{flex:1;font-size:14px}
+.task.done .tx{text-decoration:line-through;color:var(--text3)}
+.task .tm{font-size:11px;color:var(--text3)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-h{text-align:center;font-size:11px;color:var(--text3);padding:4px 0}
+.cal-d{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:8px;cursor:pointer;transition:all .15s}
+.cal-d.chk{background:var(--green);color:#fff;font-weight:600}
+.cal-d.today{border:2px solid var(--green);font-weight:600;color:var(--green-dark)}
+.cal-d.fut{color:var(--text3);opacity:.4}
+.cal-d:active{transform:scale(.92)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:7px 14px;border-radius:999px;font-size:13px;background:#fff;color:var(--text2);cursor:pointer;border:1.5px solid transparent;transition:all .15s;display:flex;align-items:center;gap:4px}
+.chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+.chip-scroll{display:flex;gap:8px;overflow-x:auto;padding:4px 0}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:var(--green-bg);width:100%;max-width:500px;border-radius:24px 24px 0 0;padding:18px 18px calc(18px+var(--safe-b));max-height:88vh;overflow-y:auto;animation:su .3s ease}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--green-light)}
+.modal-tt{font-size:16px;font-weight:600;color:var(--green-text)}
+.modal-x{background:var(--green-soft);border:none;width:30px;height:30px;border-radius:50%;font-size:18px;color:var(--green-text);cursor:pointer}
+.fg{margin-bottom:14px}
+.fl{font-size:13px;color:var(--green-text);margin-bottom:6px;display:block;font-weight:500}
+.fi,.fta,.fs{width:100%;padding:11px 14px;border:1.5px solid var(--green-light);border-radius:var(--r-sm);font-size:14px;color:var(--text);background:#fff;font-family:inherit;outline:none}
+.fi:focus,.fta:focus,.fs:focus{border-color:var(--green)}
+.fta{resize:none;min-height:70px}
+.pg-bar{height:8px;background:var(--green-soft);border-radius:4px;overflow:hidden}
+.pg-fill{height:100%;background:var(--green);border-radius:4px;transition:width .5s}
+.stats{display:flex;gap:10px;margin-bottom:12px}
+.stat{flex:1;background:#fff;border-radius:var(--r-md);padding:14px;text-align:center;box-shadow:var(--sh)}
+.stat .n{font-size:22px;font-weight:700;color:var(--green-dark)}
+.stat .l{font-size:11px;color:var(--text2);margin-top:2px}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;z-index:400;opacity:0;pointer-events:none;transition:opacity .3s}
+.toast.on{opacity:1}
+.empty{text-align:center;padding:30px 20px;color:var(--text3)}
+.empty .e{font-size:40px;margin-bottom:8px}
+.empty .t{font-size:13px}
+.word-card{background:#fff;border-radius:var(--r-md);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.word-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.word-en{font-size:18px;font-weight:700;color:var(--green-text)}
+.word-phon{font-size:12px;color:var(--text3)}
+.word-cn{font-size:14px;color:var(--text2);margin-bottom:8px}
+.word-actions{display:flex;gap:8px}
+.word-btn{background:var(--green-soft);border:none;padding:6px 12px;border-radius:999px;font-size:12px;color:var(--green-dark);cursor:pointer;display:flex;align-items:center;gap:4px}
+.article{background:#fff;border-radius:var(--r-md);padding:14px;margin-bottom:10px;box-shadow:var(--sh);cursor:pointer;transition:all .15s}
+.article:active{transform:scale(.98)}
+.article .at{font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.4}
+.article .am{display:flex;justify-content:space-between;font-size:11px;color:var(--text3)}
+.article .atag{font-size:10px;padding:2px 8px;border-radius:6px;background:var(--green-soft);color:var(--green-dark)}
+.outfit-card{background:#fff;border-radius:var(--r-md);overflow:hidden;margin-bottom:12px;box-shadow:var(--sh)}
+.outfit-cover{height:160px;display:flex;align-items:center;justify-content:center;font-size:50px}
+.outfit-info{padding:14px}
+.outfit-tt{font-size:14px;font-weight:600;margin-bottom:6px}
+.outfit-desc{font-size:12px;color:var(--text2);line-height:1.5}
+.fin-sum{background:linear-gradient(135deg,var(--green),var(--green-dark));color:#fff;border-radius:var(--r-lg);padding:18px;margin-bottom:12px;box-shadow:var(--sh2)}
+.fin-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--green-soft)}
+.fin-item:last-child{border-bottom:none}
+.fin-ic{width:36px;height:36px;border-radius:10px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.fin-nm{flex:1;font-size:14px}
+.fin-am{font-size:14px;font-weight:600}
+.fin-am.in{color:var(--green-dark)}
+.fin-am.out{color:var(--red)}
+.sc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.sc-item{padding:14px;border-radius:var(--r-md);background:#fff;box-shadow:var(--sh);cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:6px}
+.sc-item:active{transform:scale(.97)}
+.sc-item .e{font-size:26px}
+.sc-item .t{font-size:13px;font-weight:600}
+.sc-item .d{font-size:11px;color:var(--text3)}
+.chat-area{max-height:50vh;overflow-y:auto;padding:8px 0;margin-bottom:10px}
+.chat-msg{display:flex;gap:8px;margin-bottom:12px}
+.chat-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.chat-msg.bot .chat-av{background:var(--green-soft)}
+.chat-msg.me{flex-direction:row-reverse}
+.chat-msg.me .chat-av{background:var(--orange-soft)}
+.chat-bb{max-width:75%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;word-break:break-word}
+.chat-msg.bot .chat-bb{background:#fff;color:var(--text);border-bottom-left-radius:4px;box-shadow:var(--sh)}
+.chat-msg.me .chat-bb{background:var(--green);color:#fff;border-bottom-right-radius:4px}
+.chat-sug{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chat-sug .chip{font-size:12px;background:var(--green-soft);color:var(--green-dark);cursor:pointer}
+.chat-in{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--green-soft)}
+.chat-input{flex:1;padding:10px 14px;border:1.5px solid var(--green-light);border-radius:999px;font-size:14px;outline:none;font-family:inherit}
+.chat-input:focus{border-color:var(--green)}
+.chat-send{background:var(--green);color:#fff;border:none;border-radius:999px;padding:0 16px;font-size:13px;font-weight:600;cursor:pointer}
+.vid-card{background:#fff;border-radius:var(--r-md);overflow:hidden;margin-bottom:12px;box-shadow:var(--sh);cursor:pointer;transition:all .15s}
+.vid-card:active{transform:scale(.98)}
+.vid-cover{height:130px;display:flex;align-items:center;justify-content:center;font-size:44px;position:relative}
+.vid-dur{position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.7);color:#fff;padding:2px 8px;border-radius:4px;font-size:11px}
+.vid-info{padding:12px}
+.vid-tt{font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.4}
+.vid-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--text3)}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <button class="menu" onclick="toggleDrawer()">☰</button>
+  <div class="tt"><span id="hdr-e">📋</span><span id="hdr-t">每日计划</span></div>
+  <span class="dt" id="hdr-d"></span>
+</header>
+<div class="drawer-bg" id="dbg" onclick="toggleDrawer()"></div>
+<aside class="drawer" id="dr">
+  <div class="drawer-hd">
+    <div class="drawer-av">💪</div>
+    <div><div class="drawer-nm">邢怀振</div><div class="drawer-sub">Ozon跨境卖家</div></div>
+  </div>
+  <nav class="drawer-nav" id="dn"></nav>
+  <div class="drawer-ft">邢怀振工作台 v3.0</div>
+</aside>
+<div id="pages"></div>
+<div class="toast" id="toast"></div>
+<script>
+const DB={get(k,d){try{const v=localStorage.getItem('xhz_'+k);return v?JSON.parse(v):(d||null)}catch{return d||null}},set(k,v){localStorage.setItem('xhz_'+k,JSON.stringify(v))}};
+const todayStr=()=>new Date().toISOString().split('T')[0];
+const gid=()=>Date.now().toString(36)+Math.random().toString(36).substr(2,5);
+const esc=s=>s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';
+const MENUS=[
+  {id:'plan',e:'📋',t:'每日计划'},{id:'fit',e:'🥗',t:'饮食运动'},
+  {id:'ai',e:'🤖',t:'AI学习'},{id:'news',e:'📰',t:'新闻资讯'},
+  {id:'review',e:'📊',t:'工作复盘'},{id:'ozon',e:'🛒',t:'Ozon热销'},
+  {id:'chat',e:'💬',t:'情景对话'},{id:'eng',e:'🔤',t:'英语学习'},
+  {id:'express',e:'🎤',t:'表达练习'},{id:'books',e:'📚',t:'读书推荐'},
+  {id:'style',e:'👔',t:'护肤穿搭'},{id:'money',e:'📒',t:'记账'}
+];
+const QUOTES=[
+  {cn:'你现在的努力，是为了以后的从容。',en:'Your effort now is for an easier future.'},
+  {cn:'自律给你自由，坚持给你力量。',en:'Discipline brings freedom, persistence brings strength.'},
+  {cn:'慢慢来，比较快。稳稳走，才能远。',en:'Slow and steady wins the race.'},
+  {cn:'今天的你，要比昨天的你更好。',en:'Be better today than yesterday.'},
+  {cn:'微小的进步，累积起来就是了不起的蜕变。',en:'Small steps lead to great changes.'},
+  {cn:'种一棵树最好的时间是十年前，其次是现在。',en:'The best time to plant a tree was 20 years ago.'},
+  {cn:'不积跬步，无以至千里。',en:'A journey of a thousand miles begins with a single step.'},
+  {cn:'温柔地对待自己，坚定地走向目标。',en:'Be gentle with yourself, firm with your goals.'}
+];
+const ENG_WORDS=[
+  {en:'hello',ph:'/həˈloʊ/',cn:'你好'},{en:'world',ph:'/wɜːrld/',cn:'世界'},
+  {en:'learn',ph:'/lɜːrn/',cn:'学习'},{en:'effort',ph:'/ˈefərt/',cn:'努力'},
+  {en:'future',ph:'/ˈfjuːtʃər/',cn:'未来'},{en:'success',ph:'/səkˈses/',cn:'成功'},
+  {en:'believe',ph:'/bɪˈliːv/',cn:'相信'},{en:'achieve',ph:'/əˈtʃiːv/',cn:'实现'},
+  {en:'begin',ph:'/bɪˈɡɪn/',cn:'开始'},{en:'change',ph:'/tʃeɪndʒ/',cn:'改变'},
+  {en:'decide',ph:'/dɪˈsaɪd/',cn:'决定'},{en:'enjoy',ph:'/ɪnˈdʒɔɪ/',cn:'享受'},
+  {en:'follow',ph:'/ˈfɑːloʊ/',cn:'跟随'},{en:'global',ph:'/ˈɡloʊbl/',cn:'全球的'},
+  {en:'happen',ph:'/ˈhæpən/',cn:'发生'},{en:'improve',ph:'/ɪmˈpruːv/',cn:'改进'},
+  {en:'journey',ph:'/ˈdʒɜːrni/',cn:'旅程'},{en:'knowledge',ph:'/ˈnɑːlɪdʒ/',cn:'知识'},
+  {en:'language',ph:'/ˈlæŋɡwɪdʒ/',cn:'语言'},{en:'memory',ph:'/ˈmeməri/',cn:'记忆'},
+  {en:'notice',ph:'/ˈnoʊtɪs/',cn:'注意'},{en:'opinion',ph:'/əˈpɪnjən/',cn:'观点'},
+  {en:'practice',ph:'/ˈpræktɪs/',cn:'练习'},{en:'quality',ph:'/ˈkwɑːləti/',cn:'质量'},
+  {en:'reason',ph:'/ˈriːzən/',cn:'原因'},{en:'simple',ph:'/ˈsɪmpl/',cn:'简单的'},
+  {en:'travel',ph:'/ˈtrævl/',cn:'旅行'},{en:'understand',ph:'/ˌʌndərˈstænd/',cn:'理解'},
+  {en:'value',ph:'/ˈvæljuː/',cn:'价值'},{en:'wisdom',ph:'/ˈwɪzdəm/',cn:'智慧'},
+  {en:'product',ph:'/ˈprɑːdʌkt/',cn:'产品'},{en:'market',ph:'/ˈmɑːrkɪt/',cn:'市场'},
+  {en:'customer',ph:'/ˈkʌstəmər/',cn:'客户'},{en:'business',ph:'/ˈbɪznəs/',cn:'生意'},
+  {en:'profit',ph:'/ˈprɑːfɪt/',cn:'利润'},{en:'delivery',ph:'/dɪˈlɪvəri/',cn:'配送'},
+  {en:'service',ph:'/ˈsɜːrvɪs/',cn:'服务'},{en:'price',ph:'/praɪs/',cn:'价格'},
+  {en:'order',ph:'/ˈɔːrdər/',cn:'订单'},{en:'review',ph:'/rɪˈvjuː/',cn:'评价'},
+  {en:'brand',ph:'/brænd/',cn:'品牌'},{en:'trend',ph:'/trend/',cn:'趋势'},
+  {en:'update',ph:'/ˌʌpˈdeɪt/',cn:'更新'},{en:'analyze',ph:'/ˈænəlaɪz/',cn:'分析'},
+  {en:'strategy',ph:'/ˈstrætədʒi/',cn:'策略'},{en:'objective',ph:'/əbˈdʒektɪv/',cn:'目标'},
+  {en:'progress',ph:'/ˈprɑːɡres/',cn:'进度'},{en:'opportunity',ph:'/ˌɑːpərˈtuːnəti/',cn:'机会'}
+];
+const SCENES=[
+  {id:'interview',e:'💼',t:'面试场景',d:'求职面试沟通',init:'请简单介绍一下你自己，以及为什么选择我们公司？',reply:['说说你最满意的一个项目','你的职业规划是什么？']},
+  {id:'recruit',e:'🧑‍💼',t:'招聘场景',d:'面试候选人',init:'你好，我看了你的简历，聊聊你的经验吧。',reply:['你对这个岗位的期望薪资是多少？','你能多久入职？']},
+  {id:'couple',e:'💝',t:'情侣对话',d:'亲密关系沟通',init:'我们最近好像越来越疏远了，你想过为什么吗？',reply:['你是不是工作太忙了？','我们找个时间好好聊聊吧。']},
+  {id:'friend',e:'🤝',t:'朋友对话',d:'社交聊天',init:'最近怎么样？好久没聚了！',reply:['什么时候出来吃个饭？','最近有什么新鲜事？']},
+  {id:'colleague',e:'👥',t:'同事沟通',d:'工作协作',init:'这个功能模块挺紧急的，你看能不能帮个忙？',reply:['我自己任务也紧，能否协调一下？','具体什么需求？先说下。']},
+  {id:'parent',e:'👨‍👩‍👧',t:'父母交流',d:'化解代沟',init:'你工作太累了，什么时候回来考公务员？',reply:['我们都是为你好，你咋不听呢？','什么时候带对象回来？']},
+  {id:'boss',e:'👔',t:'上下级',d:'向领导汇报',init:'这个月项目进展怎么样？给我汇报一下。',reply:['直接说重点和数据','下一步计划是什么？']},
+  {id:'blind',e:'💕',t:'相亲场景',d:'初次见面',init:'你好，听介绍人说了不少关于你的事，终于见面了。',reply:['你平时周末喜欢做什么？','你对另一半有什么期待？']}
+];
+const SUGGEST={
+  interview:['我有3年XX经验，擅长XX领域','贵公司在XX领域的创新吸引了我'],
+  recruit:['期望薪资XX，可根据岗位调整','目前在职，2周内可入职'],
+  couple:['我也感觉到了，我们好好聊聊','最近压力太大，一起想办法'],
+  friend:['这周末有空，约个火锅？','刚换了个新项目，挺充实的'],
+  colleague:['理解你的难处，要不拆解需求？','先沟通紧急程度，看看能否协调'],
+  parent:['我理解你们的关心，让我说说想法','我会认真考虑，先让我试一试'],
+  boss:['本月完成3个模块，转化率+15%','下季度计划扩展新市场'],
+  blind:['我平时喜欢运动和看书，周末会去爬山','希望找到一个聊得来、有共同目标的人']
+};
+function initData(){
+  if(!DB.get('tasks'))DB.set('tasks',[
+    {id:gid(),name:'Ozon运营（选品/上架/广告）',time:'09:00',isTop3:true,top3Order:1,done:false,date:todayStr(),createdAt:Date.now()},
+    {id:gid(),name:'运动锻炼30分钟',time:'17:00',isTop3:false,top3Order:99,done:false,date:todayStr(),createdAt:Date.now()},
+    {id:gid(),name:'学习英语20个单词',time:'20:00',isTop3:false,top3Order:99,done:false,date:todayStr(),createdAt:Date.now()},
+    {id:gid(),name:'表达能力练习1篇',time:'21:00',isTop3:false,top3Order:99,done:false,date:todayStr(),createdAt:Date.now()},
+    {id:gid(),name:'晚上10:30提醒睡觉',time:'22:30',isTop3:false,top3Order:99,done:false,date:todayStr(),createdAt:Date.now()}
+  ]);
+  if(!DB.get('engWords'))DB.set('engWords',ENG_WORDS);
+  if(!DB.get('engProgress'))DB.set('engProgress',{day:0,learned:0,date:''});
+  if(!DB.get('finances'))DB.set('finances',[]);
+  if(!DB.get('meals'))DB.set('meals',[]);
+  if(!DB.get('reviews'))DB.set('reviews',{});
+  if(!DB.get('checkin'))DB.set('checkin',[]);
+  if(!DB.get('quoteIdx'))DB.set('quoteIdx',0);
+}
+function buildDrawer(){document.getElementById('dn').innerHTML=MENUS.map(m=>'<div class="dn-item '+(m.id==='plan'?'on':'')+'" data-p="'+m.id+'" onclick="go(\''+m.id+'\')"><span class="e">'+m.e+'</span><span>'+m.t+'</span></div>').join('')}
+function toggleDrawer(){document.getElementById('dr').classList.toggle('on');document.getElementById('dbg').classList.toggle('on')}
+let currentPage='plan';
+function go(id){
+  currentPage=id;
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  const el=document.getElementById('pg-'+id);
+  if(el)el.classList.add('on');
+  document.querySelectorAll('.dn-item').forEach(n=>n.classList.toggle('on',n.dataset.p===id));
+  const m=MENUS.find(x=>x.id===id);
+  document.getElementById('hdr-e').textContent=m.e;
+  document.getElementById('hdr-t').textContent=m.t;
+  document.getElementById('dr').classList.remove('on');
+  document.getElementById('dbg').classList.remove('on');
+  window.scrollTo(0,0);
+  if(RENDER[id])RENDER[id]();
+}
+const RENDER={};
+// 每日计划
+RENDER.plan=function(){
+  const now=new Date();const days=['日','一','二','三','四','五','六'];
+  document.getElementById('hdr-d').textContent=now.getMonth()+1+'月'+now.getDate()+'日 星期'+days[now.getDay()];
+  const qi=DB.get('quoteIdx',0)%QUOTES.length;const q=QUOTES[qi];
+  const tk=todayStr();const tasks=DB.get('tasks').filter(t=>t.date===tk);
+  const done=tasks.filter(t=>t.done).length;const total=tasks.length||1;
+  const pct=Math.round(done/total*100);
+  const checkin=DB.get('checkin')||[];const isChecked=checkin.includes(tk);
+  let html='<div class="cd cd-green" style="text-align:center;"><div style="font-size:14px;opacity:.9;margin-bottom:4px;">🌟 每日激励</div><div style="font-size:16px;font-weight:600;margin-bottom:6px;">'+esc(q.cn)+'</div><div style="font-size:13px;opacity:.85;font-style:italic;">'+esc(q.en)+'</div></div>';
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">📊</span>今日完成进度</div></div>';
+  html+='<div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:13px;color:var(--text2);">已完成 '+done+'/'+tasks.length+'</span><span style="font-size:20px;font-weight:700;color:var(--green-dark);">'+pct+'%</span></div><div class="pg-bar"><div class="pg-fill" style="width:'+pct+'%"></div></div><div style="display:flex;align-items:center;gap:8px;margin-top:10px;"><div class="ck '+(isChecked?'on':'')+'" onclick="toggleCheckin()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><span style="font-size:13px;color:var(--text2);">每日签到（已连续'+calcStreak()+'天）</span></div></div>';
+  const y=now.getFullYear(),mo=now.getMonth();
+  const firstDay=new Date(y,mo,1).getDay();const daysInMo=new Date(y,mo+1,0).getDate();const today=now.getDate();
+  let cal='<div class="cal"><div class="cal-h">日</div><div class="cal-h">一</div><div class="cal-h">二</div><div class="cal-h">三</div><div class="cal-h">四</div><div class="cal-h">五</div><div class="cal-h">六</div>';
+  for(let i=0;i<firstDay;i++)cal+='<div></div>';
+  for(let d=1;d<=daysInMo;d++){const dk=y+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');const checked=checkin.includes(dk);const isToday=d===today;const isFuture=d>today;cal+='<div class="cal-d '+(checked?'chk':'')+' '+(isToday?'today':'')+' '+(isFuture?'fut':'')+'" onclick="toggleCheckinDate(\''+dk+'\')">'+d+'</div>';}
+  cal+='</div>';
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">📅</span>'+(now.getMonth()+1)+'月签到日历</div></div><div class="cd">'+cal+'</div>';
+  const top3=tasks.filter(t=>t.isTop3).sort((a,b)=>(a.top3Order||99)-(b.top3Order||99));
+  const others=tasks.filter(t=>!t.isTop3);
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">⭐</span>今日三件事</div></div><div class="cd">'+(top3.length?top3.map(taskItem).join(''):'<div class="empty"><div class="t">还没有设置三件事</div></div>')+'</div>';
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">📋</span>全部待办</div></div><div class="cd">'+(others.length?others.map(taskItem).join(''):'<div class="empty"><div class="t">暂无其他任务</div></div>')+'</div>';
+  html+='<button class="btn btn-p btn-blk btn-pill" onclick="openTaskModal()" style="margin-top:4px;">+ 添加任务</button>';
+  document.getElementById('pg-plan').innerHTML=html;
+};
+function taskItem(t){return '<div class="task '+(t.done?'done':'')+'"><div class="ck '+(t.done?'on':'')+'" onclick="toggleTask(\''+t.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><div class="tx" onclick="toggleTask(\''+t.id+'\')">'+esc(t.name)+'</div>'+(t.time?'<div class="tm">'+t.time+'</div>':'')+'<button class="ck" style="border:none;background:transparent;" onclick="delTask(\''+t.id+'\')">🗑</button></div>'}
+function toggleTask(id){const tasks=DB.get('tasks');const t=tasks.find(x=>x.id===id);if(t){t.done=!t.done;DB.set('tasks',tasks);if(t.done){showToast('✅ 完成！');checkinToday()}RENDER.plan()}}
+function delTask(id){if(!confirm('删除该任务？'))return;let tasks=DB.get('tasks');tasks=tasks.filter(t=>t.id!==id);DB.set('tasks',tasks);showToast('已删除');RENDER.plan()}
+function toggleCheckin(){checkinToday();RENDER.plan()}
+function checkinToday(){const tk=todayStr();const c=DB.get('checkin')||[];if(!c.includes(tk)){c.push(tk);DB.set('checkin',c)}}
+function toggleCheckinDate(dk){const c=DB.get('checkin')||[];const i=c.indexOf(dk);if(i>=0)c.splice(i,1);else{if(new Date(dk)>new Date(todayStr()))return;c.push(dk)}DB.set('checkin',c);RENDER.plan()}
+function calcStreak(){const c=(DB.get('checkin')||[]).sort();let s=0;const today=new Date();for(let i=0;i<365;i++){const d=new Date(today);d.setDate(d.getDate()-i);const dk=d.toISOString().split('T')[0];if(c.includes(dk))s++;else if(i>0)break}return s}
+function openTaskModal(){const html='<div class="modal-bg on" id="task-modal"><div class="modal"><div class="modal-hd"><div class="modal-tt">添加任务</div><button class="modal-x" onclick="document.getElementById(\'task-modal\').remove()">×</button></div><div class="fg"><label class="fl">任务名称</label><input class="fi" id="tn-name" placeholder="输入任务..."></div><div class="fg"><label class="fl">时间</label><input type="time" class="fi" id="tn-time"></div><div class="fg"><label class="fl">是否三件事</label><div class="chips"><div class="chip on" id="tn-no" onclick="this.classList.add(\'on\');document.getElementById(\'tn-yes\').classList.remove(\'on\');window._t3=false">否</div><div class="chip" id="tn-yes" onclick="this.classList.add(\'on\');document.getElementById(\'tn-no\').classList.remove(\'on\');window._t3=true">是</div></div></div><div style="display:flex;gap:12px;"><button class="btn btn-o" style="flex:1" onclick="document.getElementById(\'task-modal\').remove()">取消</button><button class="btn btn-p" style="flex:2" onclick="saveTask()">保存</button></div></div></div>';document.body.insertAdjacentHTML('beforeend',html);window._t3=false}
+function saveTask(){const n=document.getElementById('tn-name').value.trim();if(!n){showToast('请输入名称');return}const tasks=DB.get('tasks');const tk=todayStr();const tc=tasks.filter(t=>t.date===tk&&t.isTop3).length;tasks.push({id:gid(),name:n,time:document.getElementById('tn-time').value,isTop3:window._t3||false,top3Order:window._t3?tc+1:99,done:false,date:tk,createdAt:Date.now()});DB.set('tasks',tasks);document.getElementById('task-modal').remove();showToast('已添加');RENDER.plan()}
+// 饮食运动
+RENDER.fit=function(){const now=new Date();document.getElementById('hdr-d').textContent=now.getMonth()+1+'月'+now.getDate()+'日';const tk=todayStr();const meals=DB.get('meals').filter(m=>m.date===tk);const totalCal=meals.reduce((s,m)=>s+(m.cal||0),0);let html='<div class="stats"><div class="stat"><div class="n">'+totalCal+'</div><div class="l">今日kcal</div></div><div class="stat"><div class="n">'+meals.length+'</div><div class="l">用餐次数</div></div><div class="stat"><div class="n">30</div><div class="l">运动分钟</div></div></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">🍽️</span>今日饮食</div><span class="sh-a" onclick="openMealModal()">+记录</span></div><div class="cd">'+(meals.length?meals.map(m=>'<div class="fin-item"><div class="fin-ic">'+(m.type==='breakfast'?'🌅':m.type==='lunch'?'☀️':m.type==='dinner'?'🌙':'🍪')+'</div><div class="fin-nm">'+esc(m.name)+'</div><div class="fin-am">'+(m.cal||0)+'kcal</div></div>').join(''):'<div class="empty"><div class="t">还没有记录</div></div>')+'</div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">🥗</span>推荐食谱</div></div><div class="cd"><div style="font-size:13px;color:var(--text2);line-height:1.8;"><strong style="color:var(--green-text);">🌅 早餐</strong><br>① 燕麦粥+鸡蛋+蓝莓 (~350kcal)<br>② 全麦面包+牛奶+坚果 (~400kcal)<br><br><strong style="color:var(--green-text);">☀️ 午餐</strong><br>① 鸡胸肉沙拉+糙米饭 (~500kcal)<br>② 清蒸鱼+西兰花+红薯 (~450kcal)<br><br><strong style="color:var(--green-text);">🌙 晚餐</strong><br>① 蔬菜汤+全麦面包 (~300kcal)<br>② 豆腐+蘑菇+黄瓜 (~280kcal)</div></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">💪</span>每日运动</div></div><div class="cd"><div style="font-size:13px;color:var(--text2);margin-bottom:12px;">每天20分钟HIIT训练，高效燃脂+瘦脸瘦腹</div>';const vids=[{t:'20分钟HIIT燃脂操',e:'🔥',d:'20:00',bg:'135deg,#FF6B6B,#FF8E53',kw:'20分钟HIIT燃脂'},{t:'10分钟瘦脸按摩操',e:'😌',d:'10:00',bg:'135deg,var(--green),var(--green-light)',kw:'瘦脸按摩手法'},{t:'15分钟瘦肚子专项',e:'🫃',d:'15:00',bg:'135deg,var(--blue),var(--blue-soft)',kw:'瘦肚子运动10分钟'}];vids.forEach(v=>{html+='<div class="vid-card" onclick="window.open(\'https://www.bilibili.com/search?keyword='+encodeURIComponent(v.kw)+'\',\'_blank\')"><div class="vid-cover" style="background:linear-gradient('+v.bg+')">'+v.e+'<div class="vid-dur">'+v.d+'</div></div><div class="vid-info"><div class="vid-tt">'+esc(v.t)+'</div><div class="vid-meta"><span>B站精选</span><span>🔥 推荐</span></div></div></div>'});html+='</div>';document.getElementById('pg-fit').innerHTML=html};
+function openMealModal(){const html='<div class="modal-bg on" id="meal-modal"><div class="modal"><div class="modal-hd"><div class="modal-tt">记录饮食</div><button class="modal-x" onclick="document.getElementById(\'meal-modal\').remove()">×</button></div><div class="fg"><label class="fl">类型</label><div class="chips" id="mt-chips"><div class="chip on" data-t="breakfast">🌅 早餐</div><div class="chip" data-t="lunch">☀️ 午餐</div><div class="chip" data-t="dinner">🌙 晚餐</div><div class="chip" data-t="snack">🍪 加餐</div></div></div><div class="fg"><label class="fl">食物</label><input class="fi" id="ml-name" placeholder="吃了什么"></div><div class="fg"><label class="fl">卡路里</label><input type="number" class="fi" id="ml-cal" placeholder="500"></div><div style="display:flex;gap:12px;"><button class="btn btn-o" style="flex:1" onclick="document.getElementById(\'meal-modal\').remove()">取消</button><button class="btn btn-p" style="flex:2" onclick="saveMeal()">保存</button></div></div></div>';document.body.insertAdjacentHTML('beforeend',html);document.querySelectorAll('#mt-chips .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#mt-chips .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on')})}
+function saveMeal(){const n=document.getElementById('ml-name').value.trim();if(!n){showToast('请输入食物');return}const t=document.querySelector('#mt-chips .chip.on').dataset.t;const meals=DB.get('meals');meals.push({id:gid(),name:n,type:t,cal:parseInt(document.getElementById('ml-cal').value)||0,date:todayStr()});DB.set('meals',meals);document.getElementById('meal-modal').remove();showToast('已记录');RENDER.fit()}
+// AI学习
+RENDER.ai=function(){const now=new Date();document.getElementById('hdr-d').textContent=now.getMonth()+1+'月'+now.getDate()+'日 · 9点更新';let html='<div class="cd cd-green"><div style="font-size:14px;">🤖 AI学习精选</div><div style="font-size:12px;opacity:.85;margin-top:4px;">每天9点更新AI教程和资讯</div></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">🎥</span>AI视频教程</div></div>';const aiVids=[{t:'零基础学AI：普通人如何用AI工具提升效率',p:'抖音',d:'15:00',e:'🤖',bg:'135deg,var(--blue),var(--blue-soft)'},{t:'WorkBuddy从陌生到熟悉：AI助手使用全攻略',p:'B站',d:'22:00',e:'🦾',bg:'135deg,var(--green),var(--green-light)'},{t:'AI动漫制作教程：用AI生成你的专属动画',p:'B站',d:'30:00',e:'🎨',bg:'135deg,var(--purple),var(--purple-soft)'},{t:'ChatGPT进阶技巧：写提示词的正确姿势',p:'抖音',d:'10:00',e:'💬',bg:'135deg,var(--orange),var(--orange-soft)'},{t:'AI绘画Stable Diffusion入门到精通',p:'B站',d:'45:00',e:'🖼️',bg:'135deg,#FF6B6B,#FF8E53'}];aiVids.forEach(v=>{html+='<div class="vid-card" onclick="window.open(\'https://www.bilibili.com/search?keyword='+encodeURIComponent(v.t)+'\',\'_blank\')"><div class="vid-cover" style="background:linear-gradient('+v.bg+')">'+v.e+'<div class="vid-dur">'+v.d+'</div></div><div class="vid-info"><div class="vid-tt">'+esc(v.t)+'</div><div class="vid-meta"><span>'+v.p+'</span><span>🔥 今日推荐</span></div></div></div>'});html+='<div class="sh-r"><div class="sh-t"><span class="e">📰</span>AI最新资讯</div></div><div class="cd">';const aiNews=[{t:'DeepSeek-V4发布：国产AI新突破',tag:'AI热点'},{t:'OpenAI推出GPT-5：多模态理解大幅提升',tag:'AI前沿'},{t:'AI Agent爆发年：自动化的未来已来',tag:'趋势'},{t:'AI+电商：智能选品和客服改变跨境',tag:'AI应用'},{t:'普通人用AI月入过万的5个真实案例',tag:'AI变现'},{t:'AI生成视频质量飞跃：Sora更新体验',tag:'AI视频'},{t:'国内AI监管新规：哪些不能做？',tag:'政策'},{t:'AI编程助手对比：Cursor vs Copilot',tag:'AI工具'},{t:'用AI写周报做PPT：办公效率提升10倍',tag:'AI办公'},{t:'AI绘画版权争议：你的作品属于谁？',tag:'AI争议'}];aiNews.forEach((n,i)=>{html+='<div class="article" onclick="showToast(\'正在打开...\')"><div class="at"><span style="color:var(--orange);font-weight:700;margin-right:4px;">'+(i+1)+'</span>'+esc(n.t)+'</div><div class="am"><span class="atag">🔥 '+n.tag+'</span><span>今日9:00</span></div></div>'});html+='</div>';document.getElementById('pg-ai').innerHTML=html};
+// 新闻资讯
+RENDER.news=function(){document.getElementById('hdr-d').textContent='每日9:00更新';const cats=[{k:'all',n:'全部'},{k:'global',n:'全球'},{k:'econ',n:'经济'},{k:'fin',n:'财经'},{k:'ec',n:'电商'}];const news=[{t:'美联储维持利率不变，全球市场反应积极',cat:'fin',tag:'财经'},{t:'俄罗斯电商市场2029年预计达30万亿卢布',cat:'ec',tag:'电商'},{t:'Ozon 2026年Q1 GMV同比+36%，买家6730万',cat:'ec',tag:'Ozon'},{t:'金砖国家峰会：深化经济合作新框架',cat:'global',tag:'全球'},{t:'中国出口数据亮眼，跨境电商持续增长',cat:'econ',tag:'经济'},{t:'卢布汇率波动分析：对跨境卖家的影响',cat:'fin',tag:'财经'},{t:'WB推出新卖家扶持政策',cat:'ec',tag:'电商'},{t:'全球供应链调整：制造业格局变化',cat:'global',tag:'全球'},{t:'AI+跨境电商：智能化运营趋势报告',cat:'ec',tag:'电商'},{t:'中俄贸易额创新高，直邮模式走热',cat:'econ',tag:'经济'}];let html='<div class="cd cd-green"><div style="font-size:14px;">📰 每日9点 · 全球资讯</div><div style="font-size:12px;opacity:.85;margin-top:4px;">经济·财经·金融·电商</div></div><div class="chip-scroll">';cats.forEach(c=>html+='<div class="chip '+(c.k==='all'?'on':'')+'" onclick="filterNews(\''+c.k+'\')">'+c.n+'</div>');html+='</div><div id="news-list">';news.forEach((n,i)=>{html+='<div class="article" data-cat="'+n.cat+'" onclick="showToast(\'正在打开...\')"><div class="at"><span style="color:var(--green-dark);font-weight:700;margin-right:4px;">'+(i+1)+'</span>'+esc(n.t)+'</div><div class="am"><span class="atag">📌 '+n.tag+'</span><span>今日9:00</span></div></div>'});html+='</div>';document.getElementById('pg-news').innerHTML=html};
+function filterNews(cat){document.querySelectorAll('#news-list .article').forEach(a=>{a.style.display=(cat==='all'||a.dataset.cat===cat)?'':'none'})}
+// 工作复盘
+RENDER.review=function(){const now=new Date();document.getElementById('hdr-d').textContent=now.getMonth()+1+'月'+now.getDate()+'日';const reviews=DB.get('reviews')||{};const tk=todayStr();const wk=now.getFullYear()+'-W'+getWeekNum(now);const dr=reviews[tk]||{};const wr=reviews[wk]||{};const mk=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');const mr=reviews[mk]||{};let html='<div class="cd cd-green"><div style="font-size:14px;">📊 工作复盘</div><div style="font-size:12px;opacity:.85;margin-top:4px;">每日·每周·每月，每5天提醒进度</div></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">📋</span>今日工作</div></div><div class="cd"><div class="fg"><label class="fl">今日完成的工作</label><textarea class="fta" id="rv-td" placeholder="完成了哪些工作...">'+esc(dr.done||'')+'</textarea></div><div class="fg"><label class="fl">遇到的问题</label><textarea class="fta" id="rv-ti" placeholder="遇到了什么问题...">'+esc(dr.issue||'')+'</textarea></div><div class="fg"><label class="fl">是否已解决</label><select class="fs" id="rv-ts"><option value="no">未解决</option><option value="partial">部分解决</option><option value="yes">已解决</option></select></div><button class="btn btn-p btn-blk" onclick="saveDR()">保存今日复盘</button></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">📅</span>每周复盘（周五更新）</div></div><div class="cd"><div class="fg"><label class="fl">本周完成进度</label><textarea class="fta" id="rv-wp" placeholder="本周完成了哪些目标...">'+esc(wr.progress||'')+'</textarea></div><div class="fg"><label class="fl">本周问题与解决</label><textarea class="fta" id="rv-wi" placeholder="本周问题是否解决...">'+esc(wr.issue||'')+'</textarea></div><button class="btn btn-p btn-blk" onclick="saveWR()">保存周复盘</button></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">🎯</span>每月目标</div></div><div class="cd"><textarea class="fta" id="rv-mg" placeholder="本月最重要的目标..." style="min-height:100px;">'+esc(mr.goal||'')+'</textarea><button class="btn btn-p btn-blk" style="margin-top:10px;" onclick="saveMR()">保存月度目标</button></div>';document.getElementById('pg-review').innerHTML=html;if(dr.solved)document.getElementById('rv-ts').value=dr.solved};
+function getWeekNum(d){const j=new Date(d.getFullYear(),0,1);return Math.ceil(((d-j)/86400000+j.getDay()+1)/7)}
+function saveDR(){const r=DB.get('reviews')||{};r[todayStr()]={done:val('rv-td'),issue:val('rv-ti'),solved:val('rv-ts'),savedAt:Date.now()};DB.set('reviews',r);showToast('✅ 已保存今日复盘')}
+function saveWR(){const r=DB.get('reviews')||{};const n=new Date();r[n.getFullYear()+'-W'+getWeekNum(n)]={progress:val('rv-wp'),issue:val('rv-wi'),savedAt:Date.now()};DB.set('reviews',r);showToast('✅ 已保存周复盘')}
+function saveMR(){const r=DB.get('reviews')||{};const n=new Date();r[n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')]={goal:val('rv-mg'),savedAt:Date.now()};DB.set('reviews',r);showToast('✅ 已保存月度目标')}
+function val(id){return document.getElementById(id)?document.getElementById(id).value:''}
+// Ozon热销
+RENDER.ozon=function(){document.getElementById('hdr-d').textContent='每日更新';const tabs=[{k:'all',n:'全部'},{k:'ozon',n:'Ozon'},{k:'wb',n:'WB'},{k:'yandex',n:'Yandex'},{k:'vk',n:'VK'}];const products=[{t:'迷你便携咖啡机',cat:'ozon',sales:'8.2万',price:'1290₽',e:'☕',tag:'Ozon热销'},{t:'磁力片益智玩具100片',cat:'ozon',sales:'5.6万',price:'899₽',e:'🧩',tag:'Ozon爆款'},{t:'硅胶手机壳（多机型）',cat:'ozon',sales:'12万',price:'299₽',e:'📱',tag:'Ozon走量'},{t:'保暖内衣套装（发热纤维）',cat:'wb',sales:'4.8万',price:'999₽',e:'🧥',tag:'WB热销'},{t:'LED感应灯（磁吸款）',cat:'wb',sales:'3.2万',price:'499₽',e:'💡',tag:'WB推荐'},{t:'Type-C编织数据线3片装',cat:'ozon',sales:'6.5万',price:'349₽',e:'🔌',tag:'Ozon热销'},{t:'多功能切菜器7合1',cat:'wb',sales:'3.5万',price:'599₽',e:'🥗',tag:'WB爆款'},{t:'触屏毛绒手套',cat:'ozon',sales:'3.8万',price:'399₽',e:'🧤',tag:'冬季热销'},{t:'蓝牙耳机保护套',cat:'yandex',sales:'2.8万',price:'249₽',e:'🎧',tag:'Yandex热搜'},{t:'车载手机支架',cat:'vk',sales:'2.1万',price:'399₽',e:'🚗',tag:'VK推荐'}];const hw=['AI工具','迷你咖啡机','磁力片','保暖内衣','手机壳','数据线','LED灯','切菜器','触屏手套','蓝牙耳机套','车载支架','收纳盒','液晶画板','加绒袜'];let html='<div class="cd cd-orange"><div style="font-size:14px;">🛒 俄罗斯电商每日热销</div><div style="font-size:12px;opacity:.85;margin-top:4px;">Ozon · WB · Yandex · VK</div></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">🔥</span>热搜词榜</div></div><div class="cd"><div class="chips">';hw.forEach((w,i)=>{html+='<div class="chip" style="'+(i<3?'background:var(--orange-soft);color:var(--orange);font-weight:600;':'')+'">'+(i<3?'🔥 ':'')+w+'</div>'});html+='</div></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">🏆</span>热销榜单</div></div><div class="chip-scroll">';tabs.forEach(t=>html+='<div class="chip '+(t.k==='all'?'on':'')+'" onclick="filterOzon(\''+t.k+'\')">'+t.n+'</div>');html+='</div><div id="oz-list">';products.forEach((p,i)=>{html+='<div class="vid-card oz-item" data-cat="'+p.cat+'" onclick="showToast(\''+esc(p.t)+'\')"><div class="vid-cover" style="background:linear-gradient(135deg,'+(i%2?'var(--green),var(--green-light)':'var(--blue),var(--blue-soft)')+')">'+p.e+'</div><div class="vid-info"><div class="vid-tt">'+(i+1)+'. '+esc(p.t)+'</div><div class="vid-meta"><span class="atag">📊 '+p.tag+'</span><span>月销 '+p.sales+' · '+p.price+'</span></div></div></div>'});html+='</div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">🎬</span>爆款短视频</div></div>';const vids=[{t:'俄罗斯爆款开箱：手机壳月销12万秘密',e:'📦',d:'2:30',bg:'135deg,var(--blue),var(--blue-soft)',kw:'Ozon爆款开箱手机壳'},{t:'Ozon选品指南：Q4哪些品类在爆发',e:'📈',d:'5:00',bg:'135deg,var(--green),var(--green-light)',kw:'Ozon选品指南Q4'},{t:'FBP前置仓 vs 直邮：哪种更赚钱',e:'🚀',d:'6:30',bg:'135deg,var(--orange),var(--orange-soft)',kw:'FBP前置仓vs直邮'},{t:'俄罗斯消费者画像分析',e:'🇷🇺',d:'4:00',bg:'135deg,var(--purple),var(--purple-soft)',kw:'俄罗斯消费者画像'}];vids.forEach(v=>{html+='<div class="vid-card" onclick="window.open(\'https://www.bilibili.com/search?keyword='+encodeURIComponent(v.kw)+'\',\'_blank\')"><div class="vid-cover" style="background:linear-gradient('+v.bg+')">'+v.e+'<div class="vid-dur">'+v.d+'</div></div><div class="vid-info"><div class="vid-tt">'+esc(v.t)+'</div><div class="vid-meta"><span>B站/抖音</span><span>🔥 爆款</span></div></div></div>'});document.getElementById('pg-ozon').innerHTML=html};
+function filterOzon(cat){document.querySelectorAll('#oz-list .oz-item').forEach(a=>{a.style.display=(cat==='all'||a.dataset.cat===cat)?'':'none'})}
+// 情景对话
+let curScene=null;let chatHx=[];
+RENDER.chat=function(){document.getElementById('hdr-d').textContent='模拟实战';let html='<div class="cd cd-green"><div style="font-size:14px;">🎭 情景对话</div><div style="font-size:12px;opacity:.85;margin-top:4px;">AI模拟对话，练习沟通</div></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">🎬</span>选择场景</div></div>';html+='<div class="sc-grid">'+SCENES.map(s=>'<div class="sc-item" onclick="startScene(\''+s.id+'\')"><div class="e">'+s.e+'</div><div class="t">'+esc(s.t)+'</div><div class="d">'+esc(s.d)+'</div></div>').join('')+'</div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">📜</span>对话记录</div><span class="sh-a" onclick="DB.set(\'chatHx\',{});showToast(\'已清空\');RENDER.chat()">清空</span></div>';const hx=DB.get('chatHx')||{};const items=Object.entries(hx).sort((a,b)=>(b[1].savedAt||0)-(a[1].savedAt||0)).slice(0,5);html+='<div class="cd">'+(items.length?items.map(([id,h])=>'<div class="fin-item" onclick="resumeChat(\''+id+'\')" style="cursor:pointer;"><div class="fin-ic">'+h.emoji+'</div><div class="fin-nm">'+esc(h.title)+'</div><div class="fin-am">💬 '+h.messages.length+'条</div></div>').join(''):'<div class="empty"><div class="t">还没有对话记录</div></div>')+'</div>';document.getElementById('pg-chat').innerHTML=html};
+function startScene(id){const s=SCENES.find(x=>x.id===id);if(!s)return;curScene=s;chatHx=[{role:'bot',text:s.init,av:s.e}];openChatModal()}
+function openChatModal(){if(!curScene)return;const html='<div class="modal-bg on" id="chat-modal" style="align-items:flex-end;"><div class="modal" style="max-height:90vh;"><div class="modal-hd"><div class="modal-tt">'+curScene.e+' '+curScene.t+'</div><button class="modal-x" onclick="closeChatModal()">×</button></div><div class="chat-area" id="chat-msgs"></div><div class="chat-sug" id="chat-sugs"></div><div class="chat-in"><input class="chat-input" id="chat-inp" placeholder="输入回复..." onkeydown="if(event.key===\'Enter\')sendChat()"><button class="chat-send" onclick="sendChat()">发送</button></div></div></div>';document.body.insertAdjacentHTML('beforeend',html);renderChatMsgs();renderChatSugs()}
+function renderChatMsgs(){const el=document.getElementById('chat-msgs');if(!el)return;el.innerHTML=chatHx.map(m=>'<div class="chat-msg '+m.role+'"><div class="chat-av">'+(m.av||'🙂')+'</div><div class="chat-bb">'+esc(m.text)+'</div></div>').join('');el.scrollTop=el.scrollHeight}
+function renderChatSugs(){if(!curScene)return;const sugs=SUGGEST[curScene.id]||[];const el=document.getElementById('chat-sugs');if(!el)return;el.innerHTML=sugs.map(s=>'<div class="chip" onclick="useChatSug(\''+s.replace(/'/g,"\\'")+'\')">'+esc(s)+'</div>').join('')}
+function useChatSug(t){document.getElementById('chat-inp').value=t}
+function sendChat(){const inp=document.getElementById('chat-inp');const t=inp.value.trim();if(!t||!curScene)return;chatHx.push({role:'me',text:t,av:'🙂'});inp.value='';renderChatMsgs();setTimeout(()=>{const r=curScene.reply[Math.floor(Math.random()*curScene.reply.length)];chatHx.push({role:'bot',text:r,av:curScene.e});renderChatMsgs();renderChatSugs();saveChatHx()},700)}
+function saveChatHx(){if(!curScene)return;const h=DB.get('chatHx')||{};h[curScene.id]={title:curScene.t,emoji:curScene.e,messages:chatHx.slice(-10),savedAt:Date.now()};DB.set('chatHx',h)}
+function closeChatModal(){saveChatHx();const m=document.getElementById('chat-modal');if(m)m.remove();RENDER.chat()}
+function resumeChat(id){const h=(DB.get('chatHx')||{})[id];if(!h)return;const s=SCENES.find(x=>x.id===id);if(!s)return;curScene=s;chatHx=h.messages;openChatModal()}
+// 英语学习
+RENDER.eng=function(){const now=new Date();document.getElementById('hdr-d').textContent=now.getMonth()+1+'月'+now.getDate()+'日';const p=DB.get('engProgress')||{day:0,learned:0,date:''};if(p.date!==todayStr()){p.day=(p.day||0)+1;p.date=todayStr();DB.set('engProgress',p)}const idx=(p.day-1)*20;const todayWords=ENG_WORDS.slice(idx,idx+20);const reviewWords=ENG_WORDS.slice(0,idx).slice(-20);let html='<div class="stats"><div class="stat"><div class="n">'+p.day+'</div><div class="l">累计学习天</div></div><div class="stat"><div class="n">'+(p.day-1)*20+'</div><div class="l">已学单词</div></div><div class="stat"><div class="n">20</div><div class="l">今日新词</div></div></div>';html+='<div class="cd cd-green"><div style="font-size:14px;">🔤 今日学习20个新单词</div><div style="font-size:12px;opacity:.85;margin-top:4px;">点击🔊朗读，🎙对比练习发音</div></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">📖</span>今日新词</div></div>';todayWords.forEach((w,i)=>{html+='<div class="word-card"><div class="word-top"><div><span class="word-en">'+(i+1)+'. '+esc(w.en)+'</span> <span class="word-phon">'+esc(w.ph)+'</span></div></div><div class="word-cn">'+esc(w.cn)+'</div><div class="word-actions"><button class="word-btn" onclick="speakWord(\''+w.en+'\')">🔊 朗读</button><button class="word-btn" onclick="startRecord(\''+w.en+'\')">🎙 对比</button></div></div>'});if(reviewWords.length){html+='<div class="sh-r"><div class="sh-t"><span class="e">🔄</span>复习近7天单词</div></div><div class="cd">';reviewWords.forEach(w=>{html+='<div class="fin-item"><div class="fin-ic">🔤</div><div class="fin-nm"><b>'+esc(w.en)+'</b> '+esc(w.ph)+' — '+esc(w.cn)+'</div><button class="word-btn" onclick="speakWord(\''+w.en+'\')">🔊</button></div>'});html+='</div>'}html+='<div class="cd cd-soft"><div style="font-size:13px;color:var(--green-text);margin-bottom:6px;">📅 艾宾浩斯复习计划</div><div style="font-size:12px;color:var(--text2);line-height:1.6;">① 学习后第1天复习<br>② 第3天再复习<br>③ 第7天巩固<br>④ 第15天最终复习<br><br>当前进度：第'+p.day+'天，已学'+(p.day-1)*20+'词</div></div>';document.getElementById('pg-eng').innerHTML=html};
+function speakWord(w){if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.8;speechSynthesis.speak(u)}else{showToast('不支持朗读')}}
+function startRecord(w){showToast('🎙 请朗读：'+w);speakWord(w)}
+// 表达练习
+RENDER.express=function(){document.getElementById('hdr-d').textContent='每日10:00更新';const pieces=[{t:'职场自我介绍模板',cat:'职场',content:'大家好，我是邢怀振，从事跨境电商运营已有3年，擅长Ozon平台选品和广告投放。我的优势是数据驱动，能快速找到爆款并放大。很高兴认识大家，期待有合作机会。'},{t:'向领导汇报工作模板',cat:'职场',content:'领导，本周完成三件事：第一，新品上架20款，其中3款日均出单超5单；第二，广告ACoS控制在15%以内；第三，FBP入仓2个爆款。下周计划扩展哈萨克斯坦站点。'},{t:'拒绝别人的温柔话术',cat:'日常',content:'真的很感谢你想到我，说明你信任我。不过这次确实抽不开身，我自己的项目正在关键期。下次有机会一定帮忙，或者我先帮你问问其他人？'},{t:'饭局敬酒万能话术',cat:'社交',content:'张总，这杯酒敬您。今年多亏您的指点，我学到了很多。以后还请多多关照，我干了，您随意！'},{t:'安慰朋友的暖心话',cat:'日常',content:'我知道你最近不容易，但你要相信自己。低谷期谁都有，撑过去就是成长。有什么我能帮的随时说，别一个人扛着。'},{t:'面试结束感谢话术',cat:'职场',content:'非常感谢您今天的时间，这个岗位让我很期待。无论结果如何，今天的交流让我对贵公司有了更深的了解，期待能有机会加入团队。'}];let html='<div class="cd cd-green"><div style="font-size:14px;">🎤 表达能力练习</div><div style="font-size:12px;opacity:.85;margin-top:4px;">每天10点更新，职场+日常模板，拿来即用</div></div>';pieces.forEach((p,i)=>{const safeContent=p.content.replace(/'/g,"\\'").replace(/`/g,'\\`');html+='<div class="cd"><div style="font-size:15px;font-weight:600;color:var(--green-text);margin-bottom:8px;">'+(i+1)+'. '+esc(p.t)+' <span class="atag" style="margin-left:4px;">'+p.cat+'</span></div><div style="font-size:14px;color:var(--text);line-height:1.7;margin-bottom:10px;background:var(--green-soft);padding:12px;border-radius:10px;">'+esc(p.content)+'</div><div style="display:flex;gap:8px;"><button class="word-btn" onclick="speakWord(\`'+safeContent+'\`)">🔊 朗读</button><button class="word-btn" onclick="copyText(\`'+safeContent+'\`)">📋 复制</button></div></div>'});document.getElementById('pg-express').innerHTML=html};
+function copyText(t){if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>showToast('📋 已复制'))}else{showToast('请手动复制')}}
+// 读书推荐
+RENDER.books=function(){document.getElementById('hdr-d').textContent='改变思维的书';const books=[{t:'《底层逻辑》',author:'刘润',e:'🧠',desc:'看透事物本质，理解世界运行的底层规律。',tag:'思维'},{t:'《思考，快与慢》',author:'卡尼曼',e:'⚡',desc:'大脑两套系统，理解决策中的直觉与理性。',tag:'心理学'},{t:'《人类简史》',author:'赫拉利',e:'🌍',desc:'从认知革命到AI时代，看人类文明底层逻辑。',tag:'历史'},{t:'《毛泽东选集》',author:'毛泽东',e:'📖',desc:'矛盾论、实践论——解决复杂问题的方法论。',tag:'哲学'},{t:'《穷查理宝典》',author:'芒格',e:'💰',desc:'多元思维模型，逆向思考，避免愚蠢。',tag:'思维'},{t:'《活着》',author:'余华',e:'🍂',desc:'生命韧性极致书写，读完更珍惜当下。',tag:'文学'},{t:'《原则》',author:'达利欧',e:'📐',desc:'建立自己的决策系统，人生和工作原则。',tag:'思维'},{t:'《明朝那些事儿》',author:'当年明月',e:'🏯',desc:'权谋和人性的教科书，幽默讲透明朝三百年。',tag:'历史'},{t:'《枪炮、病菌与钢铁》',author:'戴蒙德',e:'⚔️',desc:'地理决定论的底层逻辑，为什么是欧洲征服世界。',tag:'历史'},{t:'《纳瓦尔宝典》',author:'纳瓦尔',e:'💎',desc:'财富和幸福的底层逻辑，普通人逆袭的智慧。',tag:'思维'}];let html='<div class="cd cd-green"><div style="font-size:14px;">📚 读书推荐</div><div style="font-size:12px;opacity:.85;margin-top:4px;">长脑子·看透底层·改变思维</div></div>';books.forEach(b=>{html+='<div class="cd" style="display:flex;gap:12px;align-items:flex-start;"><div style="font-size:32px;width:50px;text-align:center;flex-shrink:0;">'+b.e+'</div><div style="flex:1;"><div style="font-size:15px;font-weight:600;color:var(--green-text);">'+esc(b.t)+'</div><div style="font-size:12px;color:var(--text3);margin-bottom:6px;">'+esc(b.author)+'</div><div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:6px;">'+esc(b.desc)+'</div><span class="atag">'+b.tag+'</span></div></div>'});html+='<div class="sh-r"><div class="sh-t"><span class="e">🎧</span>推荐播客</div></div>';const pods=[{t:'得到·每天听本书',d:'每天15分钟听一本书精华',e:'🎧'},{t:'樊登读书',d:'每周一本书，讲给你听',e:'📚'},{t:'忽左忽右',d:'深度对话，拓宽认知',e:'📻'},{t:'商业就是这样',d:'商业底层逻辑拆解',e:'💼'}];pods.forEach(p=>{html+='<div class="cd" style="display:flex;gap:12px;align-items:center;"><div style="font-size:28px;">'+p.e+'</div><div><div style="font-size:14px;font-weight:500;">'+esc(p.t)+'</div><div style="font-size:12px;color:var(--text3);">'+esc(p.d)+'</div></div></div>'});document.getElementById('pg-books').innerHTML=html};
+// 护肤穿搭
+RENDER.style=function(){document.getElementById('hdr-d').textContent='175偏胖穿搭';const outfits=[{t:'日常休闲Look',e:'👕',desc:'纯色T恤（深色系显瘦）+直筒牛仔裤+白色帆布鞋。T恤选V领微宽松，避免紧贴身体，裤选直筒不选修身。'},{t:'阳光运动风',e:'🏃',desc:'速干polo衫+运动束脚裤+跑鞋。浅蓝/浅灰色，显年轻有活力。'},{t:'干净简约通勤',e:'👔',desc:'浅蓝衬衫（半扎）+卡其裤+乐福鞋。衬衫微宽松，卡其裤中腰直筒。'},{t:'秋冬层次穿搭',e:'🧥',desc:'卫衣内搭白T+工装裤+帆布鞋。层次感显瘦显高，深色外搭+浅色内搭。'},{t:'约会清爽Look',e:'💕',desc:'白色圆领T+浅卡其休闲裤+小白鞋。干净最重要，合身不紧绷。'},{t:'微胖显瘦技巧',e:'💡',desc:'① 深色系显瘦但不全黑，浅色内搭制造层次；② V领比高领好，露出脖子拉长比例；③ 裤选中腰直筒，避免低腰紧身；④ 外套肩线合适，微宽松不oversized。'}];let html='<div class="cd cd-green"><div style="font-size:14px;">👔 男士护肤穿搭</div><div style="font-size:12px;opacity:.85;margin-top:4px;">175cm偏胖 · 休闲干净阳光风</div></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">✨</span>基础护肤</div></div><div class="cd"><div style="font-size:13px;color:var(--text2);line-height:1.8;"><strong style="color:var(--green-text);">🌞 晨间（2分钟）</strong><br>① 洗面奶清洁 → ② 爽肤水 → ③ 乳液 → ④ 防晒霜<br><br><strong style="color:var(--green-text);">🌙 晚间（3分钟）</strong><br>① 洗面奶清洁 → ② 爽肤水 → ③ 精华液 → ④ 面霜<br><br><strong style="color:var(--green-text);">💡 偏胖男生重点</strong><br>① 下巴和脖子交界易长痘，注意清洁<br>② T区出油多，选控油洗面奶<br>③ 防晒是最有效的抗老，一年四季都涂</div></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">👕</span>穿搭推荐</div></div>';outfits.forEach(o=>{html+='<div class="outfit-card"><div class="outfit-cover" style="background:linear-gradient(135deg,var(--green-soft),var(--green-bg2));">'+o.e+'</div><div class="outfit-info"><div class="outfit-tt">'+esc(o.t)+'</div><div class="outfit-desc">'+esc(o.desc)+'</div></div></div>'});document.getElementById('pg-style').innerHTML=html};
+// 记账
+RENDER.money=function(){const now=new Date();document.getElementById('hdr-d').textContent=now.getMonth()+1+'月';const mp=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');const fins=(DB.get('finances')||[]).filter(f=>(f.date||'').startsWith(mp));const income=fins.filter(f=>f.type==='income').reduce((s,f)=>s+f.amount,0);const expense=fins.filter(f=>f.type==='expense').reduce((s,f)=>s+f.amount,0);let html='<div class="fin-sum"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:12px;opacity:.9;">本月结余</div><div style="font-size:28px;font-weight:700;margin-top:4px;">¥'+(income-expense).toLocaleString()+'</div><div style="font-size:11px;opacity:.85;margin-top:4px;">收入 ¥'+income.toLocaleString()+' · 支出 ¥'+expense.toLocaleString()+'</div></div><button class="btn" style="background:rgba(255,255,255,.25);color:#fff;font-size:12px;padding:8px 14px;" onclick="openFinModal()">+ 记一笔</button></div></div>';html+='<div class="sh-r"><div class="sh-t"><span class="e">💸</span>本月账单</div></div><div class="cd">'+(fins.length?fins.slice().reverse().map(f=>'<div class="fin-item"><div class="fin-ic">'+(f.cat||'💰')+'</div><div class="fin-nm">'+esc(f.note||'')+'<div style="font-size:11px;color:var(--text3);">'+f.date+'</div></div><div class="fin-am '+(f.type==='income'?'in':'out')+'">'+(f.type==='income'?'+':'-')+'¥'+f.amount+'</div></div>').join(''):'<div class="empty"><div class="t">还没有记录</div></div>')+'</div>';document.getElementById('pg-money').innerHTML=html};
+function openFinModal(){const html='<div class="modal-bg on" id="fin-modal"><div class="modal"><div class="modal-hd"><div class="modal-tt">记一笔</div><button class="modal-x" onclick="document.getElementById(\'fin-modal\').remove()">×</button></div><div class="fg"><label class="fl">类型</label><div class="chips" id="ft-chips"><div class="chip on" data-t="expense">💸 支出</div><div class="chip" data-t="income">💰 收入</div></div></div><div class="fg"><label class="fl">分类</label><select class="fs" id="fin-cat"><option value="🍔">🍔 餐饮</option><option value="🛒">🛒 购物</option><option value="🚇">🚇 交通</option><option value="🏠">🏠 居家</option><option value="🎬">🎬 娱乐</option><option value="📚">📚 学习</option><option value="💼">💼 工资</option><option value="🎁">🎁 红包</option></select></div><div class="fg"><label class="fl">金额</label><input type="number" class="fi" id="fin-amt" placeholder="0"></div><div class="fg"><label class="fl">备注</label><input class="fi" id="fin-note" placeholder="选填"></div><div style="display:flex;gap:12px;"><button class="btn btn-o" style="flex:1" onclick="document.getElementById(\'fin-modal\').remove()">取消</button><button class="btn btn-p" style="flex:2" onclick="saveFin()">保存</button></div></div></div>';document.body.insertAdjacentHTML('beforeend',html);document.querySelectorAll('#ft-chips .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#ft-chips .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on')})}
+function saveFin(){const amt=parseFloat(document.getElementById('fin-amt').value);if(!amt){showToast('请输入金额');return}const t=document.querySelector('#ft-chips .chip.on').dataset.t;const fins=DB.get('finances');fins.push({id:gid(),type:t,cat:document.getElementById('fin-cat').value,amount:amt,note:document.getElementById('fin-note').value.trim(),date:todayStr()});DB.set('finances',fins);document.getElementById('fin-modal').remove();showToast('已记账');RENDER.money()}
+// 构建
+function buildPages(){let html='';MENUS.forEach(m=>{html+='<div class="pg '+(m.id==='plan'?'on':'')+'" id="pg-'+m.id+'"><div class="cd"><div class="empty"><div class="e">'+m.e+'</div><div class="t">'+m.t+'</div></div></div></div>'});document.getElementById('pages').innerHTML=html}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800)}
+initData();buildDrawer();buildPages();go('plan');
+if('serviceWorker'in navigator){const sw='const C="xhz-v3";self.addEventListener("install",e=>self.skipWaiting());self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const c=res.clone();caches.open(C).then(ca=>ca.put(e.request,c));return res}).catch(()=>r)))});';try{const b=new Blob([sw],{type:'text/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b)).catch(()=>{})}catch(e){}}
+setTimeout(()=>{if(DB.get('ios_guide_ok'))return;const ua=navigator.userAgent.toLowerCase();const isIOS=/iphone|ipad|ipod/.test(ua)&&/safari/.test(ua)&&!/crios|fxios/.test(ua);if(isIOS&&!window.navigator.standalone){const g=document.createElement('div');g.style.cssText='position:fixed;bottom:80px;left:14px;right:14px;background:#fff;padding:14px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:200;display:flex;align-items:flex-start;gap:10px;';g.innerHTML='<div style="font-size:22px;">📲</div><div style="flex:1;font-size:13px;line-height:1.5;"><strong>添加到主屏幕</strong><br>点击底部分享 ⬆️ → 选择「添加到主屏幕」</div><button onclick="this.parentElement.remove();DB.set(\'ios_guide_ok\',true)" style="background:var(--green-soft);border:none;width:28px;height:28px;border-radius:50%;font-size:16px;color:var(--green-text);">×</button>';document.body.appendChild(g);setTimeout(()=>g.remove(),15000)}},2000);
+</script>
+</body>
+</html>
