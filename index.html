@@ -214,7 +214,30 @@ const QUOTES=[
   {cn:'微小的进步，累积起来就是了不起的蜕变。',en:'Small steps lead to great changes.'},
   {cn:'种一棵树最好的时间是十年前，其次是现在。',en:'The best time to plant a tree was 20 years ago.'},
   {cn:'不积跬步，无以至千里。',en:'A journey of a thousand miles begins with a single step.'},
-  {cn:'温柔地对待自己，坚定地走向目标。',en:'Be gentle with yourself, firm with your goals.'}
+  {cn:'温柔地对待自己，坚定地走向目标。',en:'Be gentle with yourself, firm with your goals.'},
+  {cn:'行动是治愈焦虑的良药。',en:'Action is the antidote to anxiety.'},
+  {cn:'每一个优秀的人，都有一段沉默的时光。',en:'Every great person had a period of silence.'},
+  {cn:'你有多自律，就有多自由。',en:'How disciplined you are determines how free you become.'},
+  {cn:'不要在该奋斗的年纪选择安逸。',en:'Don\'t choose comfort when you should be fighting.'},
+  {cn:'与其抱怨，不如改变。',en:'Instead of complaining, change it.'},
+  {cn:'把简单的事做到极致，就是不简单。',en:'Doing simple things to the extreme is extraordinary.'},
+  {cn:'所有的横空出世，都是蓄谋已久。',en:'Every overnight success took years in the making.'},
+  {cn:'你的气质里，藏着你读过的书和走过的路。',en:'Your aura reflects the books you read and roads you travel.'},
+  {cn:'生活不会亏待每一个努力的人。',en:'Life won\'t let down anyone who tries hard.'},
+  {cn:'星光不问赶路人，时光不负有心人。',en:'Stars don\'t ask the traveler, time rewards the diligent.'},
+  {cn:'今天不走，明天要跑。',en:'If you don\'t walk today, you\'ll have to run tomorrow.'},
+  {cn:'最暗的夜，才能看到最亮的星。',en:'The darkest nights reveal the brightest stars.'},
+  {cn:'成功不是将来才有的，而是从决定去做的那一刻起。',en:'Success starts the moment you decide to act.'},
+  {cn:'人生没有白走的路，每一步都算数。',en:'No step in life is wasted, every one counts.'},
+  {cn:'熬过最难的日子，便是最好的自己。',en:'Through the hardest days come the best version of you.'},
+  {cn:'不要等机会，要创造机会。',en:'Don\'t wait for opportunities, create them.'},
+  {cn:'你若盛开，蝴蝶自来。',en:'Bloom and the butterflies will come.'},
+  {cn:'改变自己，是改变一切的起点。',en:'Changing yourself is the starting point of changing everything.'},
+  {cn:'没有人能替你坚强，你必须自己长大。',en:'No one can be strong for you, you must grow up yourself.'},
+  {cn:'把每一天当作生命的第一天来过。',en:'Live each day as if it were the first day of your life.'},
+  {cn:'困难是成长的催化剂，不是绊脚石。',en:'Difficulties are catalysts for growth, not stumbling blocks.'},
+  {cn:'你的坚持，终将美好。',en:'Your persistence will eventually become beautiful.'},
+  {cn:'想，都是问题；做，才是答案。',en:'Thinking creates problems, doing creates answers.'}
 ];
 const ENG_WORDS=[
   {en:'hello',ph:'/həˈloʊ/',cn:'你好'},{en:'world',ph:'/wɜːrld/',cn:'世界'},
@@ -276,7 +299,22 @@ function initData(){
   if(!DB.get('meals'))DB.set('meals',[]);
   if(!DB.get('reviews'))DB.set('reviews',{});
   if(!DB.get('checkin'))DB.set('checkin',[]);
-  if(!DB.get('quoteIdx'))DB.set('quoteIdx',0);
+  // 金句按日期自动轮换：一年内每天不同
+  const dayOfYear=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0))/86400000);
+  DB.set('quoteIdx',dayOfYear);
+  // 每天自动生成默认任务（如果今天还没有任务）
+  const tk=todayStr();
+  const tasks=DB.get('tasks');
+  if(!tasks.some(t=>t.date===tk)){
+    tasks.push(
+      {id:gid(),name:'Ozon运营（选品/上架/广告）',time:'09:00',isTop3:true,top3Order:1,done:false,date:tk,createdAt:Date.now()},
+      {id:gid(),name:'运动锻炼30分钟',time:'17:00',isTop3:false,top3Order:99,done:false,date:tk,createdAt:Date.now()},
+      {id:gid(),name:'学习英语20个单词',time:'20:00',isTop3:false,top3Order:99,done:false,date:tk,createdAt:Date.now()},
+      {id:gid(),name:'表达能力练习1篇',time:'21:00',isTop3:false,top3Order:99,done:false,date:tk,createdAt:Date.now()},
+      {id:gid(),name:'晚上10:30提醒睡觉',time:'22:30',isTop3:false,top3Order:99,done:false,date:tk,createdAt:Date.now()}
+    );
+    DB.set('tasks',tasks);
+  }
 }
 function buildDrawer(){document.getElementById('dn').innerHTML=MENUS.map(m=>'<div class="dn-item '+(m.id==='plan'?'on':'')+'" data-p="'+m.id+'" onclick="go(\''+m.id+'\')"><span class="e">'+m.e+'</span><span>'+m.t+'</span></div>').join('')}
 function toggleDrawer(){document.getElementById('dr').classList.toggle('on');document.getElementById('dbg').classList.toggle('on')}
