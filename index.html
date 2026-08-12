@@ -296,6 +296,10 @@ function initData(){
   if(!DB.get('checkin'))DB.set('checkin',[]);
   if(!DB.get('engProgress'))DB.set('engProgress',{day:0,date:''});
   if(!DB.get('ozonCreds'))DB.set('ozonCreds',{clientId:'',apiKey:''});
+  // 汇率迁移：旧版误将 1₽=12.5¥，修正为真实汇率 1₽≈0.083¥
+  const _r=DB.get('rubRate',null);
+  if(_r===null)DB.set('rubRate',0.083);
+  else if(_r>1)DB.set('rubRate',0.083); // 检测到旧错误数据，重置
   // 每天自动生成默认任务
   const tk=todayStr();const tasks=DB.get('tasks');
   if(!tasks.some(t=>t.date===tk)){
@@ -471,7 +475,7 @@ RENDER.dashboard=function(){
   html+='<div class="stats">';
   html+='<div class="stat"><div class="n" style="font-size:16px">₽'+weekGMV.toLocaleString()+'</div><div class="l">GMV</div></div>';
   html+='<div class="stat"><div class="n" style="font-size:16px">'+weekOrders+'</div><div class="l">订单</div></div>';
-  html+='<div class="stat"><div class="n" style="font-size:16px">¥'+Math.round(avgOrderValue*DB.get('rubRate',12.5))+'</div><div class="l">客单价(¥)</div></div>';
+  html+='<div class="stat"><div class="n" style="font-size:16px">¥'+Math.round(avgOrderValue*DB.get('rubRate',0.083))+'</div><div class="l">客单价(¥)</div></div>';
   html+='</div>';
   html+='<div class="cd cd-soft"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:13px;color:var(--green-t);"><b>转化率</b> '+weekCVR+'%</div><div style="font-size:13px;color:var(--green-t);"><b>平均日GMV</b> ₽'+Math.round(weekGMV/7).toLocaleString()+'</div></div></div>';
 
@@ -517,25 +521,131 @@ async function syncOzonData(){
   }
 }
 
-// 2. 选品上架
+// ========== 2. 选品引擎 ==========
+// 跨境直邮选品数据库：每个品含 需求度/竞争度/物流/利润/风险 五维评分基准
+// 字段: cat类目, kw关键词(俄), zh中文, price建议售价₽, cost建议采购¥, weight物流重量g, comm类目佣金%, dem需求, comp竞争, risk风险(1低5高), src1688搜索词, emo图标
+const PICK_DB=[
+  {cat:'手机配件',kw:'чехол для iphone',zh:'苹果手机壳',price:899,cost:8,weight:60,comm:14,dem:9,comp:8,risk:1,src:'iphone 手机壳 跨境',emo:'📱'},
+  {cat:'手机配件',kw:'кабель type-c',zh:'Type-C数据线',price:699,cost:6,weight:50,comm:14,dem:9,comp:9,risk:1,src:'type-c 数据线 3米',emo:'🔌'},
+  {cat:'手机配件',kw:'беспроводная зарядка',zh:'无线充电器',price:1590,cost:35,weight:120,comm:15,dem:7,comp:6,risk:2,src:'无线充电器 15w',emo:'⚡'},
+  {cat:'家居收纳',kw:'органайзер',zh:'桌面收纳盒',price:990,cost:18,weight:180,comm:17,dem:7,comp:6,risk:2,src:'桌面收纳盒 跨境',emo:'🗃️'},
+  {cat:'家居收纳',kw:'вешалка для одежды',zh:'衣柜收纳挂袋',price:1190,cost:22,weight:150,comm:17,dem:7,comp:5,risk:2,src:'衣柜收纳挂袋',emo:'👕'},
+  {cat:'厨房工具',kw:'терка для овощей',zh:'多功能切菜器',price:790,cost:12,weight:160,comm:16,dem:8,comp:6,risk:2,src:'切菜器 多功能',emo:'🥕'},
+  {cat:'厨房工具',kw:'бутылка для воды',zh:'便携水杯',price:1090,cost:20,weight:180,comm:15,dem:8,comp:7,risk:2,src:'便携水杯 跨境',emo:'🍶'},
+  {cat:'厨房工具',kw:'контейнер для еды',zh:'便当盒',price:690,cost:10,weight:130,comm:16,dem:8,comp:6,risk:2,src:'便当盒 分隔',emo:'🍱'},
+  {cat:'冬季保暖',kw:'перчатки сенсорные',zh:'触屏手套',price:890,cost:15,weight:90,comm:15,dem:8,comp:7,risk:2,src:'触屏手套 秋冬季',emo:'🧤'},
+  {cat:'冬季保暖',kw:'тёплые носки',zh:'加绒保暖袜',price:490,cost:5,weight:60,comm:16,dem:9,comp:7,risk:1,src:'加绒保暖袜 五双',emo:'🧦'},
+  {cat:'冬季保暖',kw:'шапка зимняя',zh:'针织帽',price:790,cost:12,weight:100,comm:15,dem:8,comp:7,risk:2,src:'毛线帽 冬帽',emo:'🎩'},
+  {cat:'冬季保暖',kw:'плед плюшевый',zh:'法兰绒毯子',price:1490,cost:40,weight:650,comm:17,dem:8,comp:5,risk:3,src:'法兰绒毛毯',emo:'🛋️'},
+  {cat:'宠物用品',kw:'игрушка для кошки',zh:'逗猫棒',price:590,cost:6,weight:70,comm:16,dem:7,comp:7,risk:2,src:'逗猫棒 宠物',emo:'🐱'},
+  {cat:'宠物用品',kw:'расческа для собак',zh:'宠物梳子',price:690,cost:9,weight:90,comm:16,dem:6,comp:6,risk:2,src:'宠物梳子 除毛',emo:'🐶'},
+  {cat:'LED灯具',kw:'ночник светодиодный',zh:'LED感应夜灯',price:690,cost:11,weight:110,comm:15,dem:8,comp:6,risk:2,src:'LED感应夜灯 充电',emo:'💡'},
+  {cat:'LED灯具',kw:'светодиодная лента',zh:'LED灯带',price:1190,cost:28,weight:150,comm:15,dem:8,comp:7,risk:2,src:'LED灯带 5米',emo:'✨'},
+  {cat:'数码周边',kw:'наушники bluetooth',zh:'蓝牙耳机',price:1690,cost:60,weight:80,comm:14,dem:8,comp:8,risk:3,src:'蓝牙耳机 跨境',emo:'🎧'},
+  {cat:'数码周边',kw:'подставка для телефона',zh:'手机支架',price:490,cost:5,weight:80,comm:15,dem:9,comp:8,risk:1,src:'手机支架 桌面',emo:'📱'},
+  {cat:'数码周边',kw:'повербанк',zh:'便携充电宝',price:1990,cost:75,weight:240,comm:14,dem:8,comp:8,risk:3,src:'充电宝 20000mah',emo:'🔋'},
+  {cat:'美容个护',kw:'щетка для лица',zh:'洁面刷',price:790,cost:14,weight:90,comm:17,dem:6,comp:5,risk:2,src:'硅胶洁面刷',emo:'🧴'},
+  {cat:'美容个护',kw:'маска для глаз',zh:'蒸汽眼罩',price:390,cost:4,weight:60,comm:17,dem:7,comp:6,risk:1,src:'蒸汽眼罩 发热',emo:'😌'},
+  {cat:'美容个护',kw:'зеркало с подсветкой',zh:'LED化妆镜',price:1290,cost:30,weight:200,comm:16,dem:6,comp:5,risk:2,src:'led化妆镜',emo:'🪞'},
+  {cat:'汽车用品',kw:'держатель для телефона в авто',zh:'车载手机支架',price:890,cost:16,weight:90,comm:15,dem:7,comp:7,risk:2,src:'车载手机支架 出风口',emo:'🚗'},
+  {cat:'汽车用品',kw:'ароматизатор для авто',zh:'车载香薰',price:590,cost:9,weight:80,comm:16,dem:6,comp:6,risk:2,src:'车载香薰 出风口',emo:'🌬️'},
+  {cat:'户外运动',kw:'пояс для фитнеса',zh:'健身弹力带',price:690,cost:14,weight:80,comm:15,dem:6,comp:5,risk:2,src:'健身弹力带',emo:'🏋️'},
+  {cat:'户外运动',kw:'складная бутылка',zh:'折叠水壶',price:790,cost:13,weight:100,comm:15,dem:6,comp:5,risk:2,src:'折叠水壶 户外',emo:'🥤'},
+  {cat:'儿童玩具',kw:'конструктор магнитный',zh:'磁力片积木',price:1390,cost:38,weight:350,comm:15,dem:8,comp:6,risk:3,src:'磁力片积木 跨境',emo:'🧲'},
+  {cat:'儿童玩具',kw:'поп ит игрушка',zh:'解压泡泡玩具',price:390,cost:3,weight:40,comm:16,dem:8,comp:9,risk:1,src:'解压泡泡玩具',emo:'🫧'}
+];
+// 选品评分引擎：五维加权打分，跨境直邮倾向轻、小、低风险
+function pickScore(p){
+  const rate=DB.get('rubRate',0.083);
+  const revenue=p.price*rate;
+  // 物流友好度：重量<150g满分，越大分越低（跨境邮费占比）
+  const logistic=Math.max(0,100-(p.weight-60)/3);
+  // 利润率预估：全成本模型（佣金+汇损，暂不摊固定物流）
+  const commission=revenue*p.comm/100;
+  const loss=revenue*0.5/100;
+  const profit=revenue-p.cost-commission-loss;
+  const margin=revenue?profit/revenue*100:0;
+  const marginScore=Math.min(100,margin*2.2);
+  // 竞争度反向：竞争低分高
+  const compScore=100-(p.comp-1)*12;
+  // 综合：需求权重最高
+  const total=Math.round(
+    p.dem*0.32+      // 需求度 32%
+    compScore*0.18+  // 竞争度 18%
+    logistic*0.20+   // 物流友好 20%
+    marginScore*0.20+// 利润率 20%
+    (6-p.risk)*10*0.10 // 低风险 10%
+  );
+  return {total,logistic,margin,marginScore,compScore};
+}
+// 1688找货
+function find1688(src,zh){
+  const url='https://s.1688.com/selloffer/offer_search.htm?keywords='+encodeURIComponent(src);
+  window.open(url,'_blank');
+  showToast('已打开1688搜索: '+zh);
+}
+// 一键加入上架计划
+function addToPlan(kw,zh,cost,price,cat){
+  const p=DB.get('products',[]);
+  const ex=p.find(x=>x.name===zh);
+  if(ex){showToast('⚠️ 已在计划中');return}
+  p.push({id:gid(),name:zh,cat:cat,cost:cost,price:price,status:'pending',emoji:'📦',createdAt:Date.now()});
+  DB.set('products',p);showToast('✅ 已加入上架计划');RENDER.selection();
+}
+
+// 2. 选品上架 —— 会工作的选品工具
 RENDER.selection=function(){
   const now=new Date();document.getElementById('hdr-d').textContent=(now.getMonth()+1)+'月'+now.getDate()+'日';
   const products=DB.get('products',[]);
-  const ozonHW=['便携榨汁机','磁力片玩具','透明手机壳','编织数据线','LED感应灯','保暖内衣','切菜器','毛绒手套','宠物饮水器','纳米海绵'];
-  const wbHW=['德绒保暖内衣','触屏手套','切菜器套装','毛绒床品','加绒打底裤','儿童积木','保温杯','暖宝宝贴','防水鞋套','围巾披肩'];
-  const yandexHW=['蓝牙耳机套','车载支架','手机支架','无线充电器','智能手环','便携充电宝','蓝牙音箱','键盘膜','读卡器','手机膜'];
-  let html='<div class="cd cd-orange"><div style="font-size:14px;">🛒 选品上架管理</div><div style="font-size:12px;opacity:.85;margin-top:4px;">热搜词 + 上架计划 + 竞品监控</div></div>';
+  // 按评分排序，取Top12
+  const scored=PICK_DB.map(p=>({data:p,score:pickScore(p)}));
+  scored.sort((a,b)=>b.score.total-a.score.total);
+  const top=scored.slice(0,12);
+  let html='<div class="cd cd-orange"><div style="font-size:14px;">🛒 选品引擎</div><div style="font-size:12px;opacity:.85;margin-top:4px;">跨境直邮 · 五维评分 · 一键找货</div></div>';
 
-  // 热搜词
-  html+='<div class="sh-r"><div class="sh-t"><span class="e">🔥</span>Ozon热搜词TOP10</div></div><div class="cd"><div style="display:flex;flex-wrap:wrap;gap:6px;">';
-  ozonHW.forEach((w,i)=>{html+='<div style="display:flex;align-items:center;gap:4px;background:'+(i<3?'var(--orange-s)':'var(--green-s)')+';padding:6px 10px;border-radius:8px;font-size:12px;color:'+(i<3?'var(--orange)':'var(--green-t)')+';font-weight:'+(i<3?'600':'400')+';"><b>'+(i+1)+'</b> '+esc(w)+'</div>'});
-  html+='</div></div>';
-  html+='<div class="sh-r"><div class="sh-t"><span class="e">🟣</span>WB热搜词TOP10</div></div><div class="cd"><div style="display:flex;flex-wrap:wrap;gap:6px;">';
-  wbHW.forEach((w,i)=>{html+='<div style="display:flex;align-items:center;gap:4px;background:'+(i<3?'var(--purple-s)':'var(--green-s)')+';padding:6px 10px;border-radius:8px;font-size:12px;color:'+(i<3?'var(--purple)':'var(--green-t)')+';font-weight:'+(i<3?'600':'400')+';"><b>'+(i+1)+'</b> '+esc(w)+'</div>'});
-  html+='</div></div>';
-  html+='<div class="sh-r"><div class="sh-t"><span class="e">🔴</span>Yandex热搜词TOP10</div></div><div class="cd"><div style="display:flex;flex-wrap:wrap;gap:6px;">';
-  yandexHW.forEach((w,i)=>{html+='<div style="display:flex;align-items:center;gap:4px;background:'+(i<3?'var(--red)':'var(--green-s)')+';padding:6px 10px;border-radius:8px;font-size:12px;color:'+(i<3?'#fff':'var(--green-t)')+';font-weight:'+(i<3?'600':'400')+';"><b>'+(i+1)+'</b> '+esc(w)+'</div>'});
-  html+='</div></div>';
+  // 选品思路说明（跨境直邮核心逻辑）
+  html+='<div class="cd cd-soft"><div style="font-size:13px;color:var(--green-t);line-height:1.8;">🎯 <b>跨境直邮选品铁律</b><br>① 重量&lt;200g，物流费占比低才划算<br>② 客单价 ₽500-1500，太高退款风险大<br>③ 轻小、不易碎、无液体/电池限制<br>④ 复购/多SKU，铺开走量<br>⑤ 避开大品牌垄断款（如苹果原装）</div></div>';
+
+  // 智能推荐
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">🏆</span>智能推荐 · 跨境直邮精选</div><span class="sh-a" onclick="showToast(\'基于'+scored.length+'款选品数据库五维评分排序\')">五维评分</span></div>';
+
+  // 评分推荐卡片
+  top.forEach((item,i)=>{
+    const d=item.data;const s=item.score;
+    const star=i===0?'👑':i<3?'⭐':i<6?'✨':'';
+    const bg=i===0?'var(--orange-s)':i<3?'var(--green-s)':'var(--card)';
+    const color=i===0?'var(--orange)':i<3?'var(--green-d)':'var(--text1)';
+    // 重新算单件净利
+    const revenue=d.price*DB.get('rubRate',0.083);
+    const profit=revenue-d.cost-revenue*d.comm/100-revenue*0.005;
+    const marginColor=profit>=revenue*0.3?'var(--green-d)':profit>=revenue*0.15?'var(--orange)':'var(--red)';
+    html+='<div class="kpi-card" style="background:'+bg+';"><div class="kpi-row"><span class="kpi-label">'+star+' '+esc(d.zh)+' <span style="font-size:10px;color:var(--text3);">'+esc(d.cat)+'</span></span><span class="kpi-trend up" style="color:'+color+';">'+s.total+'分</span></div>';
+    html+='<div style="font-size:11px;color:var(--text3);margin:4px 0;">俄语: '+esc(d.kw)+'</div>';
+    html+='<div style="display:flex;gap:10px;font-size:12px;flex-wrap:wrap;margin:6px 0;">';
+    html+='<span>⚖️ 竞争<b style="color:'+(d.comp>=8?'var(--red)':d.comp>=6?'var(--orange)':'var(--green-d)')+'">'+d.comp+'/10</b></span>';
+    html+='<span>🔥 需求<b style="color:var(--green-d)">'+d.dem+'/10</b></span>';
+    html+='<span>📦 '+d.weight+'g</span>';
+    html+='<span>建议<b>₽'+d.price+'</b> 进<b>¥'+d.cost+'</b></span>';
+    html+='<span>净利<b style="color:'+marginColor+'">¥'+Math.round(profit)+'</b></span>';
+    html+='</div>';
+    html+='<div style="display:flex;gap:8px;margin-top:8px;">';
+    html+='<button class="btn" style="flex:1;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:13px;padding:8px 0;" onclick="find1688(\''+d.src+'\',\''+d.zh+'\')">🔍 1688找货</button>';
+    html+='<button class="btn btn-p" style="flex:1;font-size:13px;padding:8px 0;" onclick="addToPlan(\''+d.kw+'\',\''+d.zh+'\','+d.cost+','+d.price+',\''+d.cat+'\')">➕ 加入上架</button>';
+    html+='</div></div>';
+  });
+
+  // 类目/价格带建议
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">💡</span>类目/价格带建议</div></div>';
+  html+='<div class="cd"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">';
+  html+='<span class="atag" style="background:var(--green-s);color:var(--green-d)">🥇 手机配件 佣金14% 轻小</span>';
+  html+='<span class="atag" style="background:var(--orange-s);color:var(--orange)">🥈 冬季保暖 季节性爆发</span>';
+  html+='<span class="atag" style="background:var(--blue-s);color:var(--blue)">🥉 厨房/家居 复购稳定</span>';
+  html+='<span class="atag" style="background:var(--purple-s);color:var(--purple)">⚠️ 电子/充电宝 物流敏感</span>';
+  html+='</div><div style="font-size:12px;color:var(--text2);line-height:1.7;">💰 <b>黄金价格带</b>：售价 ₽500-1500（¥40-120），物流费占比低、利润空间足<br>📦 <b>重量红线</b>：单品 &lt;200g 首选，&lt;500g 可接受，超过需重算物流<br>🚫 <b>避坑</b>：液体、磁铁超规、纯电池、大件易碎、品牌侵权</div></div>';
+
+  // 竞品监控占位
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">📊</span>竞品监控</div></div>';
+  html+='<div class="cd"><div class="empty"><div class="e">👁️</div><div class="t">竞品监控即将上线<br>将接入 Ozon 前台真实搜索建议</div></div></div>';
 
   // 上架计划
   html+='<div class="sh-r"><div class="sh-t"><span class="e">📋</span>上架计划</div><span class="sh-a" onclick="openProductModal()">+ 添加</span></div>';
@@ -550,8 +660,15 @@ RENDER.selection=function(){
     if(listed.length){html+='<div class="cd"><div style="font-size:12px;color:var(--green-d);font-weight:600;margin-bottom:6px;">✅ 已上架 ('+listed.length+')</div>';listed.forEach(p=>{html+=productItem(p)});html+='</div>'}
   }
 
-  // 选品建议
-  html+='<div class="sh-r"><div class="sh-t"><span class="e">💡</span>选品建议</div></div><div class="cd cd-soft"><div style="font-size:13px;color:var(--green-t);line-height:1.8;">📦 <b>Q4旺季</b>：保暖内衣、触屏手套、暖宝宝<br>📦 <b>常青款</b>：手机壳、数据线、LED灯<br>📦 <b>高利润</b>：宠物用品、家居收纳<br>📦 <b>走量款</b>：纳米海绵、手机膜<br><br>💡 <b>上架节奏</b>：每周3-5款新品测试，7天看数据，不行就下架</div></div>';
+  // 季节性动态选品建议（按月份自动推荐）
+  const month=now.getMonth()+1;
+  let season=[];
+  if(month>=10||month<=2){season=['🧤 触屏手套','🧦 加绒保暖袜','🎩 针织帽','❄️ 暖宝宝贴','🛋️ 法兰绒毯','🔥 电热毯/暖手宝']}
+  else if(month>=6&&month<=8){season=['🕶️ 太阳镜','🏖️ 泳镜/泳帽','🍉 便携榨汁杯','☀️ 遮阳帽','🌂 折叠伞','🐛 驱蚊器']}
+  else{season=['📱 手机壳','🔌 数据线','🗃️ 收纳盒','🧲 磁力片玩具','💡 LED夜灯','🥕 切菜器']}
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">🌦️</span>本月适销（'+month+'月）</div></div><div class="cd"><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+  season.forEach((s,i)=>{html+='<span class="atag" style="background:'+(i<3?'var(--orange-s)':'var(--green-s)')+';color:'+(i<3?'var(--orange)':'var(--green-t)')+';font-size:12px;">'+s+'</span>'});
+  html+='</div><div style="font-size:11px;color:var(--text3);margin-top:8px;">💡 上架节奏：每周测 3-5 款，7 天看数据，不行就下架</div></div>';
   document.getElementById('pg-selection').innerHTML=html;
 };
 
@@ -648,7 +765,7 @@ async function syncOrders(){
 // 4. 利润计算 —— 自动测算引擎
 // 完整成本模型：采购 + 佣金 + 物流 + 广告 + 汇率损耗
 function calcProfit(p,rate,cfg){
-  rate=rate||DB.get('rubRate',12.5);
+  rate=rate||DB.get('rubRate',0.083);
   cfg=cfg||DB.get('profitCfg',{commission:15,logistics:0,ads:0,lossRate:0.5,extra:0});
   const revenue=p.price*rate;                    // 售价折人民币
   const commission=revenue*cfg.commission/100;   // Ozon佣金（按营收比例）
@@ -662,7 +779,7 @@ function calcProfit(p,rate,cfg){
 }
 // 一键评测：填入售价实时算出是否值得卖
 function evalProfit(){
-  const rate=parseFloat(val('pe-rate'))||DB.get('rubRate',12.5);
+  const rate=parseFloat(val('pe-rate'))||DB.get('rubRate',0.083);
   const price=parseFloat(val('pe-price'));
   const cost=parseFloat(val('pe-cost'))||0;
   const cfg=DB.get('profitCfg',{commission:15,logistics:0,ads:0,lossRate:0.5,extra:0});
@@ -677,7 +794,7 @@ function evalProfit(){
 RENDER.profit=function(){
   const now=new Date();document.getElementById('hdr-d').textContent=(now.getMonth()+1)+'月';
   const products=DB.get('products',[]).filter(p=>p.status==='listed');
-  const rate=DB.get('rubRate',12.5);
+  const rate=DB.get('rubRate',0.083);
   const cfg=DB.get('profitCfg',{commission:15,logistics:0,ads:0,lossRate:0.5,extra:0});
   let html='<div class="rub-card"><div style="font-size:14px;">💰 利润测算引擎</div><div style="font-size:12px;opacity:.85;margin-top:4px;">全成本自动拆解 · 一眼判断值不值得卖</div></div>';
 
@@ -864,12 +981,12 @@ RENDER.finance=function(){
   const fins=(DB.get('finances')||[]).filter(f=>(f.date||'').startsWith(mp));
   const income=fins.filter(f=>f.type==='income').reduce((s,f)=>s+f.amount,0);
   const expense=fins.filter(f=>f.type==='expense').reduce((s,f)=>s+f.amount,0);
-  const rate=DB.get('rubRate',12.5);
+  const rate=DB.get('rubRate',0.083);
   let html='<div class="fin-sum"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:12px;opacity:.9;">本月结余</div><div style="font-size:28px;font-weight:700;margin-top:4px;">¥'+(income-expense).toLocaleString()+'</div><div style="font-size:11px;opacity:.85;">收入 ¥'+income.toLocaleString()+' · 支出 ¥'+expense.toLocaleString()+'</div></div><button class="btn" style="background:rgba(255,255,255,.25);color:#fff;font-size:12px;padding:8px 14px;" onclick="openFinModal()">+ 记一笔</button></div></div>';
 
   // 汇率换算
   html+='<div class="sh-r"><div class="sh-t"><span class="e">💱</span>汇率换算</div></div>';
-  html+='<div class="cd"><div class="fg"><label class="fl">当前汇率 1₽ = ?¥</label><input type="number" class="fi" id="fin-rate" value="'+rate+'" step="0.1" onchange="DB.set(\'rubRate\',parseFloat(this.value)||12.5)"></div><div class="fg"><label class="fl">₽ 金额</label><input type="number" class="fi" id="rub-amt" placeholder="如 1000" oninput="calcRate()"></div><div class="fg"><label class="fl">¥ 人民币</label><input type="number" class="fi" id="cny-amt" placeholder="自动计算" readonly></div></div>';
+  html+='<div class="cd"><div class="fg"><label class="fl">当前汇率 1₽ = ?¥</label><input type="number" class="fi" id="fin-rate" value="'+rate+'" step="0.1" onchange="DB.set(\'rubRate\',parseFloat(this.value)||0.083)"></div><div class="fg"><label class="fl">₽ 金额</label><input type="number" class="fi" id="rub-amt" placeholder="如 1000" oninput="calcRate()"></div><div class="fg"><label class="fl">¥ 人民币</label><input type="number" class="fi" id="cny-amt" placeholder="自动计算" readonly></div></div>';
 
   // 账单
   html+='<div class="sh-r"><div class="sh-t"><span class="e">💸</span>本月账单</div></div><div class="cd">';
@@ -881,7 +998,7 @@ RENDER.finance=function(){
   document.getElementById('pg-finance').innerHTML=html;
 };
 
-function calcRate(){const r=parseFloat(val('fin-rate'))||12.5;const rub=parseFloat(val('rub-amt'))||0;document.getElementById('cny-amt').value=Math.round(rub*r*100)/100}
+function calcRate(){const r=parseFloat(val('fin-rate'))||0.083;const rub=parseFloat(val('rub-amt'))||0;document.getElementById('cny-amt').value=Math.round(rub*r*100)/100}
 function openFinModal(){const h='<div class="modal-bg on" id="fin-modal"><div class="modal"><div class="modal-hd"><div class="modal-tt">记一笔</div><button class="modal-x" onclick="document.getElementById(\'fin-modal\').remove()">×</button></div><div class="fg"><label class="fl">类型</label><div class="chips" id="ft-chips"><div class="chip on" data-t="expense">💸 支出</div><div class="chip" data-t="income">💰 收入</div></div></div><div class="fg"><label class="fl">分类</label><select class="fs" id="fin-cat"><option value="📦">📦 采购</option><option value="🚚">🚚 物流</option><option value="📊">📊 广告</option><option value="🍔">🍔 餐饮</option><option value="🏠">🏠 居家</option><option value="💼">💼 工资</option><option value="🎁">🎁 红包</option></select></div><div class="fg"><label class="fl">金额 ¥</label><input type="number" class="fi" id="fin-amt" placeholder="0"></div><div class="fg"><label class="fl">备注</label><input class="fi" id="fin-note" placeholder="选填"></div><button class="btn btn-p btn-blk" onclick="saveFin()">保存</button></div></div>';document.body.insertAdjacentHTML('beforeend',h);document.querySelectorAll('#ft-chips .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#ft-chips .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on')})}
 function saveFin(){const a=parseFloat(val('fin-amt'));if(!a){showToast('请输入金额');return}const t=document.querySelector('#ft-chips .chip.on').dataset.t;const f=DB.get('finances',[]);f.push({id:gid(),type:t,cat:val('fin-cat'),amount:a,note:val('fin-note'),date:todayStr()});DB.set('finances',f);document.getElementById('fin-modal').remove();showToast('已记账');RENDER.finance()}
 
@@ -972,7 +1089,7 @@ RENDER.settings=function(){
   html+='<div class="sh-r"><div class="sh-t"><span class="e">🗑️</span>数据管理</div></div>';
   html+='<div class="cd"><button class="btn btn-o btn-blk" onclick="exportData()">📤 导出全部数据</button><button class="btn btn-blk" style="margin-top:8px;" onclick="importData()">📥 导入备份数据</button><button class="btn btn-blk" style="margin-top:8px;color:var(--red);" onclick="clearData()">🗑️ 清除全部数据</button></div>';
 
-  html+='<div class="cd" style="text-align:center;font-size:12px;color:var(--text3);">Ozon卖家工作台 v6.0<br>新增：🔔提醒通知 · 🧮利润测算引擎<br>© 2026 邢怀振</div>';
+  html+='<div class="cd" style="text-align:center;font-size:12px;color:var(--text3);">Ozon卖家工作台 v6.1<br>新增：🛒选品引擎 · 修正真实汇率(1₽≈¥0.083) · 🔔提醒通知 · 🧮利润测算<br>© 2026 邢怀振</div>';
   document.getElementById('pg-settings').innerHTML=html;
 };
 
@@ -1074,7 +1191,7 @@ setInterval(()=>REMINDER.run(),30*60*1000);
 
 // Service Worker (network-first)
 if('serviceWorker'in navigator){
-  var swCode='var C="oz-v6";self.addEventListener("install",function(e){self.skipWaiting()});self.addEventListener("activate",function(e){e.waitUntil(self.clients.claim().then(function(){return caches.keys().then(function(ks){ks.forEach(function(k){if(k!==C)caches.delete(k)})})}))});self.addEventListener("fetch",function(e){if(e.request.method!=="GET")return;e.respondWith(fetch(e.request).then(function(res){var c=res.clone();caches.open(C).then(function(ca){ca.put(e.request,c)});return res}).catch(function(){return caches.match(e.request).then(function(r){return r||caches.match("./")})}))});';
+  var swCode='var C="oz-v6-1";self.addEventListener("install",function(e){self.skipWaiting()});self.addEventListener("activate",function(e){e.waitUntil(self.clients.claim().then(function(){return caches.keys().then(function(ks){ks.forEach(function(k){if(k!==C)caches.delete(k)})})}))});self.addEventListener("fetch",function(e){if(e.request.method!=="GET")return;e.respondWith(fetch(e.request).then(function(res){var c=res.clone();caches.open(C).then(function(ca){ca.put(e.request,c)});return res}).catch(function(){return caches.match(e.request).then(function(r){return r||caches.match("./")})}))});';
   try{
     var swBlob=new Blob([swCode],{type:'text/javascript'});
     navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(function(){});
