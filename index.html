@@ -14,16 +14,17 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
 <style>
-:root{--green:#5BA888;--green-d:#4A8C70;--green-l:#8DD5B0;--green-s:#E0F3E9;--green-bg:#F2F9F4;--green-t:#2D5C46;--orange:#FF9F43;--orange-s:#FFF3E0;--blue:#4A90D9;--blue-s:#E3F2FD;--red:#FF6B6B;--purple:#AB47BC;--purple-s:#F3E5F5;--text:#1a1a1a;--text2:#555;--text3:#999;--r:14px;--sh:0 1px 6px rgba(91,168,136,.08);--sh2:0 2px 12px rgba(91,168,136,.12);--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
+:root{--green:#5BA888;--green-d:#4A8C70;--green-l:#8DD5B0;--green-s:#E0F3E9;--green-bg:#F2F9F4;--green-t:#2D5C46;--orange:#FF9F43;--orange-s:#FFF3E0;--blue:#4A90D9;--blue-s:#E3F2FD;--red:#FF6B6B;--purple:#AB47BC;--purple-s:#F3E5F5;--text:#1a1a1a;--text2:#555;--text3:#999;--card:#fff;--border:#f0f0f0;--r:14px;--sh:0 1px 6px rgba(91,168,136,.08);--sh2:0 2px 12px rgba(91,168,136,.12);--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
+html.dark{--green:#4EC38E;--green-d:#3A9B70;--green-l:#6FD6A8;--green-s:#1E3A30;--green-bg:#101714;--green-t:#7AD6A8;--orange:#FFA94D;--orange-s:#3A2E1E;--blue:#5BA3E8;--blue-s:#1E2E3A;--red:#FF7B7B;--purple:#C56FD0;--purple-s:#2E1E3A;--text:#E8F2ED;--text2:#A8B8B0;--text3:#6B7B73;--card:#1B241F;--border:#2A3832;--sh:0 1px 6px rgba(0,0,0,.3);--sh2:0 2px 12px rgba(0,0,0,.4)}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',sans-serif;background:var(--green-bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}body{min-height:100vh}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',sans-serif;background:var(--green-bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .3s}body{min-height:100vh}
 ::-webkit-scrollbar{display:none}
 .hdr{background:var(--green);padding:calc(var(--st)+10px) 14px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;color:#fff;border-radius:0 0 20px 20px;box-shadow:0 2px 8px rgba(91,168,136,.2)}
 .hdr .menu{background:rgba(255,255,255,.2);border:none;width:36px;height:36px;border-radius:10px;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .hdr .tt{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:600}
 .hdr .dt{font-size:12px;opacity:.9}
 .dbg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;opacity:0;pointer-events:none;transition:.3s}.dbg.on{opacity:1;pointer-events:auto}
-.dr{position:fixed;left:0;top:0;bottom:0;width:240px;background:#fff;z-index:200;transform:translateX(-100%);transition:.3s;overflow-y:auto;padding-top:calc(var(--st)+10px)}
+.dr{position:fixed;left:0;top:0;bottom:0;width:240px;background:var(--card);z-index:200;transform:translateX(-100%);transition:.3s;overflow-y:auto;padding-top:calc(var(--st)+10px)}
 .dr.on{transform:translateX(0)}
 .dr-h{padding:16px 18px 10px;font-size:13px;color:var(--text3);font-weight:600}
 .di{display:flex;align-items:center;gap:10px;padding:12px 18px;font-size:14px;color:var(--text2);cursor:pointer;border-left:3px solid transparent}
@@ -31,12 +32,12 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica 
 .di .e{font-size:18px;width:24px;text-align:center}
 .pages{padding:14px;padding-bottom:calc(var(--sb)+80px)}
 .pg{display:none}.pg.on{display:block}
-.cd{background:#fff;border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.cd{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
 .cd-green{background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff}
 .cd-orange{background:linear-gradient(135deg,var(--orange),#FF7B2E);color:#fff}
 .cd-soft{background:var(--green-s)}
 .stats{display:flex;gap:8px;margin-bottom:10px}
-.stat{flex:1;background:#fff;border-radius:var(--r);padding:12px 8px;text-align:center;box-shadow:var(--sh)}
+.stat{flex:1;background:var(--card);border-radius:var(--r);padding:12px 8px;text-align:center;box-shadow:var(--sh)}
 .stat .n{font-size:22px;font-weight:700;color:var(--green-d)}
 .stat .l{font-size:11px;color:var(--text3);margin-top:2px}
 .sh-r{display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px}
@@ -50,7 +51,7 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica 
 .chip.on{background:var(--green);color:#fff}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip-scroll{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px}
-.task{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.task{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
 .task:last-child{border:none}
 .ck{width:22px;height:22px;border-radius:6px;border:2px solid #ddd;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff}
 .ck.on{background:var(--green);border-color:var(--green)}
@@ -58,32 +59,32 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica 
 .t-nm{flex:1;font-size:14px}.t-nm.done{text-decoration:line-through;color:var(--text3)}
 .t-top{font-size:12px;color:var(--text3);margin-bottom:2px}.t-top3{color:var(--orange);font-weight:600}
 .t-del{color:var(--red);cursor:pointer;font-size:18px;opacity:.5}
-.fin-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.fin-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
 .fin-item:last-child{border:none}
 .fin-ic{font-size:20px;width:32px;text-align:center}
 .fin-nm{flex:1;font-size:13px}
 .fin-am{font-weight:600;font-size:14px}.fin-am.in{color:var(--green-d)}.fin-am.out{color:var(--red)}
 .fin-sum{background:linear-gradient(135deg,var(--green),var(--green-d));border-radius:var(--r);padding:16px;margin-bottom:10px;color:#fff}
-.word-card{background:#fff;border-radius:var(--r);padding:12px;margin-bottom:8px;box-shadow:var(--sh)}
+.word-card{background:var(--card);border-radius:var(--r);padding:12px;margin-bottom:8px;box-shadow:var(--sh)}
 .word-en{font-size:16px;font-weight:600;color:var(--green-t)}
 .word-phon{font-size:12px;color:var(--text3);margin-left:4px}
 .word-cn{font-size:13px;color:var(--text2);margin:4px 0 8px}
 .word-actions{display:flex;gap:6px}
 .word-btn{background:var(--green-s);color:var(--green-t);border:none;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer}
-.vid-card{display:flex;gap:10px;background:#fff;border-radius:var(--r);padding:10px;margin-bottom:8px;box-shadow:var(--sh);cursor:pointer}
+.vid-card{display:flex;gap:10px;background:var(--card);border-radius:var(--r);padding:10px;margin-bottom:8px;box-shadow:var(--sh);cursor:pointer}
 .vid-cover{width:80px;height:60px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;position:relative}
 .vid-dur{position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;padding:1px 4px;border-radius:3px}
 .vid-info{flex:1;min-width:0}
 .vid-tt{font-size:13px;font-weight:500;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .vid-meta{font-size:11px;color:var(--text3);display:flex;gap:8px}
 .atag{background:var(--green-s);color:var(--green-t);padding:2px 6px;border-radius:4px;font-size:11px}
-.article{padding:10px 0;border-bottom:1px solid #f0f0f0;cursor:pointer}
+.article{padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
 .article:last-child{border:none}
 .at{font-size:14px;line-height:1.4}.am{font-size:11px;color:var(--text3);margin-top:4px;display:flex;gap:8px}
 .empty{text-align:center;padding:30px 0;color:var(--text3)}.empty .e{font-size:36px;margin-bottom:8px}.empty .t{font-size:13px}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999;opacity:0;pointer-events:none;transition:.3s;display:flex;align-items:flex-end;justify-content:center}
 .modal-bg.on{opacity:1;pointer-events:auto}
-.modal{background:#fff;width:100%;max-width:420px;border-radius:20px 20px 0 0;padding:16px;max-height:80vh;overflow-y:auto;transform:translateY(100%);transition:.3s}
+.modal{background:var(--card);width:100%;max-width:420px;border-radius:20px 20px 0 0;padding:16px;max-height:80vh;overflow-y:auto;transform:translateY(100%);transition:.3s}
 .modal-bg.on .modal{transform:translateY(0)}
 .modal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .modal-tt{font-size:16px;font-weight:600}
@@ -92,8 +93,8 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica 
 .fi{width:100%;border:1px solid #e0e0e0;border-radius:10px;padding:10px 12px;font-size:14px;outline:none}
 .fi:focus{border-color:var(--green)}
 .fta{width:100%;border:1px solid #e0e0e0;border-radius:10px;padding:10px 12px;font-size:14px;outline:none;min-height:80px;resize:vertical}
-.fs{width:100%;border:1px solid #e0e0e0;border-radius:10px;padding:10px 12px;font-size:14px;outline:none;background:#fff}
-.pg-bar{height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden}
+.fs{width:100%;border:1px solid #e0e0e0;border-radius:10px;padding:10px 12px;font-size:14px;outline:none;background:var(--card)}
+.pg-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
 .pg-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green-l));border-radius:4px;transition:width .5s}
 .cal-d{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:6px;cursor:pointer}
 .cal-d.ck{background:var(--green);color:#fff}.cal-d.today{border:2px solid var(--green)}.cal-d.other{opacity:.3}
@@ -102,7 +103,7 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica 
 .api-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600}
 .api-badge.ok{background:var(--green-s);color:var(--green-d)}
 .api-badge.no{background:#FFE0E0;color:var(--red)}
-.kpi-card{background:#fff;border-radius:var(--r);padding:14px;margin-bottom:8px;box-shadow:var(--sh)}
+.kpi-card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:8px;box-shadow:var(--sh)}
 .kpi-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .kpi-label{font-size:13px;color:var(--text2)}
 .kpi-val{font-size:20px;font-weight:700}
@@ -328,6 +329,9 @@ RENDER.dashboard=function(){
   const yest=hist[hist.length-2]||{};
   const weekGMV=hist.reduce((s,d)=>s+(d.gmv||0),0);
   const weekOrders=hist.reduce((s,d)=>s+(d.orders||0),0);
+  const weekViews=hist.reduce((s,d)=>s+(d.views||0),0);
+  const avgOrderValue=weekOrders?Math.round(weekGMV/weekOrders):0;
+  const weekCVR=weekViews?Math.round(weekOrders/weekViews*1000)/10:0;
   let html='<div class="cd cd-green"><div style="font-size:14px;">📊 今日数据看板</div><div style="font-size:12px;opacity:.85;margin-top:4px;">';
   html+=apiOk?'✅ Ozon API已连接 · 数据自动同步':'⚠️ API未配置 · 点击设置页配置';
   html+='</div></div>';
@@ -342,15 +346,45 @@ RENDER.dashboard=function(){
   html+='<div class="kpi-card"><div class="kpi-row"><span class="kpi-label">📦 订单趋势</span><span class="kpi-trend '+(ordTrend>=0?'up':'down')+'">'+(ordTrend>=0?'↑':'↓')+Math.abs(ordTrend)+'%</span></div><div class="kpi-val">'+(today.orders||0)+'单</div><div class="kpi-sub">昨日 '+(yest.orders||0)+'单 · 本周'+weekOrders+'单</div></div>';
 
   // 7天柱状图
-  const maxGMV=Math.max(...hist.map(d=>d.gmv||0),1);
-  html+='<div class="cd"><div style="font-size:13px;font-weight:600;margin-bottom:8px;">📊 近7天GMV趋势</div><div class="chart-bar">';
-  hist.forEach(d=>{
-    const h=Math.round((d.gmv||0)/maxGMV*100);
-    html+='<div class="chart-col" style="height:'+h+'%" onclick="showToast(\''+d.date+': ₽'+(d.gmv||0)+'\')"></div>';
+  const maxGMV=0;
+  // 7天SVG趋势图
+  html+='<div class="cd"><div style="font-size:13px;font-weight:600;margin-bottom:8px;">📊 近7天GMV趋势</div>';
+  const W=320,H=120,pad=8;
+  const gmvArr=hist.map(d=>d.gmv||0);
+  const maxV=Math.max(...gmvArr,1);
+  const minV=Math.min(...gmvArr,0);
+  const range=maxV-minV||1;
+  const stepX=(W-pad*2)/(gmvArr.length-1||1);
+  const pts=gmvArr.map((v,i)=>(pad+stepX*i)+','+(H-pad-((v-minV)/range)*(H-pad*2)));
+  const linePts=pts.join(' ');
+  const areaPts=pad+','+H+' '+pts.join(' ')+' '+(W-pad)+','+H;
+  // 平均线
+  const avg=Math.round(gmvArr.reduce((s,v)=>s+v,0)/gmvArr.length);
+  const avgY=H-pad-((avg-minV)/range)*(H-pad*2);
+  html+='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:120px;">';
+  html+='<defs><linearGradient id="gmg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--green)" stop-opacity=".3"/><stop offset="100%" stop-color="var(--green)" stop-opacity="0"/></linearGradient></defs>';
+  html+='<polygon points="'+areaPts+'" fill="url(#gmg)"/>';
+  html+='<polyline points="'+linePts+'" fill="none" stroke="var(--green)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+  html+='<line x1="'+pad+'" y1="'+avgY+'" x2="'+(W-pad)+'" y2="'+avgY+'" stroke="var(--orange)" stroke-width="1" stroke-dasharray="4,3"/>';
+  html+='<text x="'+(W-pad-4)+'" y="'+(avgY-3)+'" text-anchor="end" font-size="9" fill="var(--orange)">平均 '+avg+'</text>';
+  // 数据点
+  gmvArr.forEach((v,i)=>{
+    const px=pad+stepX*i,py=H-pad-((v-minV)/range)*(H-pad*2);
+    html+='<circle cx="'+px+'" cy="'+py+'" r="3" fill="'+(v===maxV?'var(--orange)':'var(--green)')+'" onclick="showToast(\''+hist[i].date+': ₽'+v+'\')"><title>'+hist[i].date+' : ₽'+v+'</title></circle>';
   });
-  html+='</div><div style="display:flex;gap:3px;">';
+  html+='</svg>';
+  html+='<div style="display:flex;gap:2px;">';
   hist.forEach(d=>{const dt=new Date(d.date);html+='<div class="chart-label" style="flex:1">'+(dt.getMonth()+1)+'/'+dt.getDate()+'</div>'});
-  html+='</div></div>';
+  html+='</div><div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--text3);"><span>🔵 峰值 ₽'+maxV+'</span><span>⚪ 平均 ₽'+avg+'</span></div></div>';
+
+  // 本周汇总
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">📈</span>本周汇总（7天）</div></div>';
+  html+='<div class="stats">';
+  html+='<div class="stat"><div class="n" style="font-size:16px">₽'+weekGMV.toLocaleString()+'</div><div class="l">GMV</div></div>';
+  html+='<div class="stat"><div class="n" style="font-size:16px">'+weekOrders+'</div><div class="l">订单</div></div>';
+  html+='<div class="stat"><div class="n" style="font-size:16px">¥'+Math.round(avgOrderValue*DB.get('rubRate',12.5))+'</div><div class="l">客单价(¥)</div></div>';
+  html+='</div>';
+  html+='<div class="cd cd-soft"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:13px;color:var(--green-t);"><b>转化率</b> '+weekCVR+'%</div><div style="font-size:13px;color:var(--green-t);"><b>平均日GMV</b> ₽'+Math.round(weekGMV/7).toLocaleString()+'</div></div></div>';
 
   // 手动录入
   html+='<div class="sh-r"><div class="sh-t"><span class="e">✏️</span>手动录入今日数据</div></div>';
@@ -747,6 +781,11 @@ RENDER.settings=function(){
 
   html+='<div class="cd cd-soft"><div style="font-size:13px;color:var(--green-t);line-height:1.7;">📖 <b>如何获取API凭证</b><br>1. 登录 seller.ozon.ru<br>2. 右上角「设置」→「卖家API」<br>3. 复制 Client ID<br>4. 点击「生成密钥」→ 选Admin角色<br>5. 复制 API Key（只显示一次！）<br><br>⚠️ API Key存储在本地浏览器，不上传任何服务器</div></div>';
 
+  // 外观设置
+  const darkMode=DB.get('darkMode',false);
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">🎨</span>外观设置</div></div>';
+  html+='<div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;"><div><div style="font-size:14px;">🌙 暗色模式</div><div style="font-size:11px;color:var(--text3);">适合夜间使用，保护眼睛</div></div><div style="width:48px;height:26px;background:'+(darkMode?'var(--green)':'var(--border)')+';border-radius:13px;position:relative;cursor:pointer;transition:.3s;" onclick="toggleDark()"><div style="position:absolute;top:3px;'+(darkMode?'right:3px;background:#fff':'left:3px;background:var(--text3)')+';width:20px;height:20px;border-radius:50%;transition:.3s;"></div></div></div></div>';
+
   // API状态
   html+='<div class="cd"><div style="font-size:13px;font-weight:600;margin-bottom:8px;">📊 系统状态</div>';
   html+='<div class="fin-item"><div class="fin-ic">🔌</div><div class="fin-nm">API连接状态</div><span class="api-badge '+(apiOk?'ok':'no')+'">'+(apiOk?'已连接':'未配置')+'</span></div>';
@@ -755,7 +794,7 @@ RENDER.settings=function(){
 
   // 数据管理
   html+='<div class="sh-r"><div class="sh-t"><span class="e">🗑️</span>数据管理</div></div>';
-  html+='<div class="cd"><button class="btn btn-o btn-blk" onclick="exportData()">📤 导出全部数据</button><button class="btn btn-blk" style="margin-top:8px;color:var(--red);" onclick="clearData()">🗑️ 清除全部数据</button></div>';
+  html+='<div class="cd"><button class="btn btn-o btn-blk" onclick="exportData()">📤 导出全部数据</button><button class="btn btn-blk" style="margin-top:8px;" onclick="importData()">📥 导入备份数据</button><button class="btn btn-blk" style="margin-top:8px;color:var(--red);" onclick="clearData()">🗑️ 清除全部数据</button></div>';
 
   html+='<div class="cd" style="text-align:center;font-size:12px;color:var(--text3);">Ozon卖家工作台 v5.0<br>© 2026 邢怀振</div>';
   document.getElementById('pg-settings').innerHTML=html;
@@ -773,11 +812,38 @@ async function testCreds(){
   if(data){showToast('✅ 连接成功！')}else{showToast('❌ 连接失败，请检查')}
 }
 
+function toggleDark(){
+  const cur=!DB.get('darkMode',false);
+  DB.set('darkMode',cur);
+  document.documentElement.classList.toggle('dark',cur);
+  RENDER.settings();
+}
+function applyTheme(){
+  document.documentElement.classList.toggle('dark',DB.get('darkMode',false));
+}
 function exportData(){
   const all={};Object.keys(localStorage).forEach(k=>{if(k.startsWith('oz_'))all[k]=localStorage.getItem(k)});
   const blob=new Blob([JSON.stringify(all,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ozon_workbench_backup.json';a.click();
   showToast('✅ 数据已导出');
+}
+
+// 数据导入
+function importData(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=function(e){
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        const data=JSON.parse(ev.target.result);
+        Object.keys(data).forEach(k=>{if(k.startsWith('oz_'))localStorage.setItem(k,data[k])});
+        showToast('✅ 数据已导入');location.reload();
+      }catch(err){showToast('❌ 文件格式错误')}
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
 }
 
 function clearData(){
@@ -810,7 +876,7 @@ function go(id){
 function buildPages(){let html='';MENUS.forEach(m=>{html+='<div class="pg '+(m.id==='dashboard'?'on':'')+'" id="pg-'+m.id+'"></div>'});document.getElementById('pages').innerHTML=html}
 
 // ========== 启动 ==========
-initData();buildDrawer();buildPages();go('dashboard');
+applyTheme();initData();buildDrawer();buildPages();go('dashboard');
 
 // Service Worker (network-first)
 if('serviceWorker'in navigator){
@@ -822,7 +888,7 @@ if('serviceWorker'in navigator){
 }
 
 // iOS安装引导
-setTimeout(()=>{if(DB.get('ios_guide_ok'))return;const ua=navigator.userAgent.toLowerCase();const isIOS=/iphone|ipad|ipod/.test(ua)&&/safari/.test(ua)&&!/crios|fxios/.test(ua);if(isIOS&&!window.navigator.standalone){const g=document.createElement('div');g.style.cssText='position:fixed;bottom:80px;left:14px;right:14px;background:#fff;padding:14px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:200;display:flex;align-items:flex-start;gap:10px;';g.innerHTML='<div style="font-size:22px;">📲</div><div style="flex:1;font-size:13px;line-height:1.5;"><strong>添加到主屏幕</strong><br>点击底部分享 ⬆️ → 选择「添加到主屏幕」</div><button onclick="this.parentElement.remove();DB.set(\'ios_guide_ok\',true)" style="background:var(--green-s);border:none;width:28px;height:28px;border-radius:50%;font-size:16px;color:var(--green-t);">×</button>';document.body.appendChild(g);setTimeout(()=>g.remove(),15000)}},2000);
+setTimeout(()=>{if(DB.get('ios_guide_ok'))return;const ua=navigator.userAgent.toLowerCase();const isIOS=/iphone|ipad|ipod/.test(ua)&&/safari/.test(ua)&&!/crios|fxios/.test(ua);if(isIOS&&!window.navigator.standalone){const g=document.createElement('div');g.style.cssText='position:fixed;bottom:80px;left:14px;right:14px;background:var(--card);padding:14px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:200;display:flex;align-items:flex-start;gap:10px;';g.innerHTML='<div style="font-size:22px;">📲</div><div style="flex:1;font-size:13px;line-height:1.5;"><strong>添加到主屏幕</strong><br>点击底部分享 ⬆️ → 选择「添加到主屏幕」</div><button onclick="this.parentElement.remove();DB.set(\'ios_guide_ok\',true)" style="background:var(--green-s);border:none;width:28px;height:28px;border-radius:50%;font-size:16px;color:var(--green-t);">×</button>';document.body.appendChild(g);setTimeout(()=>g.remove(),15000)}},2000);
 </script>
 </body>
 </html>
