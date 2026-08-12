@@ -140,6 +140,95 @@ const esc=s=>s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g
 const val=id=>{const e=document.getElementById(id);return e?e.value:''};
 const showToast=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800)};
 
+// ========== 本地提醒通知系统 ==========
+const REMINDER={
+  // 检查通知权限并请求
+  ensure:function(){
+    if(!('Notification'in window))return false;
+    if(Notification.permission==='granted')return true;
+    if(Notification.permission==='default'){Notification.requestPermission();return false}
+    return false;
+  },
+  // 发一条通知（带图标与点击跳转）
+  fire:function(title,body,tag){
+    if(!REMINDER.ensure())return;
+    try{
+      const n=new Notification(title,{body:body,tag:tag,icon:'icon-192.png'});
+      n.onclick=function(){n.close();window.focus()};
+    }catch(e){}
+  },
+  // 检查"是否已提醒过该事件"，用日期做去重
+  firedToday:function(key){
+    const today=DB.get('reminderLog',{});
+    return today[key]===todayStr();
+  },
+  markFired:function(key){
+    const today=DB.get('reminderLog',{});
+    today[key]=todayStr();DB.set('reminderLog',today);
+  },
+  // 每日 09:00 晨报（只在当天首次启动时推送一次）
+  morningDigest:function(){
+    if(REMINDER.firedToday('digest'))return;
+    const cfg=DB.get('remindCfg',{});
+    if(cfg.digest===false)return;
+    const orders=DB.get('orders_manual',[]);
+    const pending=orders.filter(o=>o.status==='pending').length;
+    const hist=getKPIHistory(2);const yesterday=hist[0]||{};
+    const tasks=DB.get('tasks',[]).filter(t=>t.date===todayStr()&&!t.done).length;
+    const line1='📦 待发货 '+pending+' 单 · 待办任务 '+tasks+' 个';
+    const line2='昨日 GMV ₽'+(yesterday.gmv||0)+' · 订单 '+(yesterday.orders||0);
+    REMINDER.fire('☀️ 早上好，今日卖家晨报',line1+'\n'+line2,'digest');
+    REMINDER.markFired('digest');
+  },
+  // 待发货订单提醒（每小时，有未发货就提醒）
+  pendingCheck:function(){
+    const cfg=DB.get('remindCfg',{});
+    if(cfg.orders===false)return;
+    if(REMINDER.firedToday('orders'))return;
+    const orders=DB.get('orders_manual',[]);
+    const pending=orders.filter(o=>o.status==='pending').length;
+    if(pending>0){
+      REMINDER.fire('📦 '+pending+' 单待发货','有订单尚未处理发货，请及时安排','orders');
+      REMINDER.markFired('orders');
+    }
+  },
+  // 差评监控提醒
+  reviewCheck:function(){
+    const cfg=DB.get('remindCfg',{});
+    if(cfg.reviews===false)return;
+    if(REMINDER.firedToday('reviews'))return;
+    const r=DB.get('reviews',{});
+    const today=reviews_today();
+    // reviews 里存的是复盘数据，这里用自定义 reviewAlert 标记差评
+    const alerts=DB.get('reviewAlerts',[]);
+    const bad=alerts.filter(a=>a.date===todayStr()&&a.level<=2).length;
+    if(bad>0){
+      REMINDER.fire('⚠️ 有 '+bad+' 条低分评价','请及时查看并处理差评','reviews');
+      REMINDER.markFired('reviews');
+    }
+  },
+  // 每日复盘提醒（21:00 后）
+  reviewDone:function(){
+    const cfg=DB.get('remindCfg',{});
+    if(cfg.reviewDone===false)return;
+    if(REMINDER.firedToday('reviewDone'))return;
+    const reviews=DB.get('reviews',{});
+    if(!reviews[todayStr()]){
+      REMINDER.fire('📋 今日复盘还没做','花2分钟记录今日GMV、完成情况与明日计划','reviewDone');
+      REMINDER.markFired('reviewDone');
+    }
+  },
+  // 主检查：被定时器调用
+  run:function(){
+    if(!REMINDER.ensure())return;
+    REMINDER.morningDigest();
+    REMINDER.pendingCheck();
+    REMINDER.reviewCheck();
+    REMINDER.reviewDone();
+  }
+};
+function reviews_today(){return todayStr()}
+
 // ========== Ozon API 对接 ==========
 const OZON_API='https://api-seller.ozon.ru';
 // CORS代理：通过Cloudflare Worker转发请求
@@ -556,35 +645,84 @@ async function syncOrders(){
   }
 }
 
-// 4. 利润计算
+// 4. 利润计算 —— 自动测算引擎
+// 完整成本模型：采购 + 佣金 + 物流 + 广告 + 汇率损耗
+function calcProfit(p,rate,cfg){
+  rate=rate||DB.get('rubRate',12.5);
+  cfg=cfg||DB.get('profitCfg',{commission:15,logistics:0,ads:0,lossRate:0.5,extra:0});
+  const revenue=p.price*rate;                    // 售价折人民币
+  const commission=revenue*cfg.commission/100;   // Ozon佣金（按营收比例）
+  const logistics=cfg.logistics||0;              // 每单固定物流费(¥)
+  const ads=cfg.ads||0;                          // 每单广告费(¥)
+  const loss=revenue*cfg.lossRate/100;           // 汇损+退款损耗(¥)
+  const cost=(p.cost||0)+commission+logistics+ads+loss+ (cfg.extra||0);
+  const profit=revenue-cost;
+  const margin=revenue?profit/revenue*100:0;
+  return {revenue,commission,logistics,ads,loss,cost,profit,margin,verdict:margin>=30?'优':margin>=15?'可':'低'};
+}
+// 一键评测：填入售价实时算出是否值得卖
+function evalProfit(){
+  const rate=parseFloat(val('pe-rate'))||DB.get('rubRate',12.5);
+  const price=parseFloat(val('pe-price'));
+  const cost=parseFloat(val('pe-cost'))||0;
+  const cfg=DB.get('profitCfg',{commission:15,logistics:0,ads:0,lossRate:0.5,extra:0});
+  const fakeP={price:price,cost:cost};
+  const box=document.getElementById('pe-result');
+  if(!price){box.innerHTML='<div style="font-size:12px;color:var(--text3);">输入售价后自动测算</div>';return}
+  const r=calcProfit(fakeP,rate,cfg);
+  const color=r.margin>=30?'var(--green-d)':r.margin>=15?'var(--orange)':'var(--red)';
+  const verdict=r.margin>=30?'✅ 值得卖':r.margin>=15?'⚖️ 可接受':'❌ 不建议卖';
+  box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;"><div><div style="font-size:12px;color:var(--text3);">售价折人民币</div><div style="font-size:18px;font-weight:700;">¥'+Math.round(r.revenue)+'</div></div><div><div style="font-size:12px;color:var(--text3);">净利润</div><div style="font-size:18px;font-weight:700;color:'+color+';">¥'+Math.round(r.profit)+'</div></div><div><div style="font-size:12px;color:var(--text3);">净利率</div><div style="font-size:18px;font-weight:700;color:'+color+';">'+r.margin.toFixed(1)+'%</div></div></div><div style="text-align:center;padding:8px;background:'+(r.margin>=30?'var(--green-s)':r.margin>=15?'var(--orange-s)':'rgba(239,68,68,.08)')+';border-radius:8px;font-weight:700;color:'+color+';">'+verdict+'</div><div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6;">明细：采购¥'+cost+' · 佣金¥'+Math.round(r.commission)+' · 物流¥'+(r.logistics||0)+' · 广告¥'+(r.ads||0)+' · 汇损¥'+Math.round(r.loss)+'</div>';
+}
 RENDER.profit=function(){
   const now=new Date();document.getElementById('hdr-d').textContent=(now.getMonth()+1)+'月';
   const products=DB.get('products',[]).filter(p=>p.status==='listed');
-  const rate=DB.get('rubRate',12.5); // 1 RUB = 12.5 CNY (approx)
-  let html='<div class="rub-card"><div style="font-size:14px;">💰 利润计算器</div><div style="font-size:12px;opacity:.85;margin-top:4px;">自动计算单品利润率 · 汇率 1₽=¥'+rate+'<br>（可在记账汇率页修改）</div></div>';
+  const rate=DB.get('rubRate',12.5);
+  const cfg=DB.get('profitCfg',{commission:15,logistics:0,ads:0,lossRate:0.5,extra:0});
+  let html='<div class="rub-card"><div style="font-size:14px;">💰 利润测算引擎</div><div style="font-size:12px;opacity:.85;margin-top:4px;">全成本自动拆解 · 一眼判断值不值得卖</div></div>';
 
-  // 汇率提示
-  html+='<div class="cd"><div class="fg"><label class="fl">当前汇率 1₽ = ?¥</label><input type="number" class="fi" id="rate-input" value="'+rate+'" step="0.1" onchange="DB.set(\'rubRate\',parseFloat(this.value)||12.5);RENDER.profit()"></div></div>';
+  // 成本参数设置
+  html+='<div class="cd"><div style="font-size:13px;font-weight:600;margin-bottom:8px;">⚙️ 成本参数（每单）</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+  html+='<div><label class="fl">Ozon佣金率 %</label><input type="number" class="fi" id="pc-comm" value="'+cfg.commission+'" step="0.5" onchange="saveProfitCfg()"></div>';
+  html+='<div><label class="fl">跨境物流 ¥</label><input type="number" class="fi" id="pc-log" value="'+cfg.logistics+'" step="1" onchange="saveProfitCfg()"></div>';
+  html+='<div><label class="fl">每单广告 ¥</label><input type="number" class="fi" id="pc-ads" value="'+cfg.ads+'" step="1" onchange="saveProfitCfg()"></div>';
+  html+='<div><label class="fl">汇损+退款率 %</label><input type="number" class="fi" id="pc-loss" value="'+cfg.lossRate+'" step="0.1" onchange="saveProfitCfg()"></div>';
+  html+='</div><div style="font-size:11px;color:var(--text3);margin-top:6px;">Ozon 佣金率可到卖家后台「费率与佣金」查看，不同类目不同（约 5%~20%）</div></div>';
 
+  // 一键测算器
+  html+='<div class="cd cd-green"><div style="font-size:13px;font-weight:600;margin-bottom:8px;">🧮 一键测算</div><div style="display:flex;gap:8px;">';
+  html+='<div style="flex:1"><label class="fl">售价 ₽</label><input type="number" class="fi" id="pe-price" placeholder="如 890" oninput="evalProfit()"></div>';
+  html+='<div style="flex:1"><label class="fl">采购成本 ¥</label><input type="number" class="fi" id="pe-cost" placeholder="如 35" oninput="evalProfit()"></div>';
+  html+='</div><div style="margin-top:6px;font-size:11px;color:var(--text3);">汇率 1₽=¥'+rate+'（记账汇率页可改）</div><div id="pe-result" style="margin-top:8px;padding:10px;background:var(--green-s);border-radius:8px;"><div style="font-size:12px;color:var(--text3);">输入售价和成本后，自动算出净利润和是否值得卖</div></div></div>';
+
+  // 已上架产品利润列表
   if(products.length===0){
     html+='<div class="cd"><div class="empty"><div class="e">💰</div><div class="t">暂无已上架产品<br>在选品上架页添加产品并标记为"已上架"</div></div></div>';
   }else{
     let totalProfit=0,totalRevenue=0;
+    html+='<div class="sh-r"><div class="sh-t"><span class="e">📊</span>已上架产品利润</div></div>';
     products.forEach((p,i)=>{
-      const revenueCNY=p.price*rate;
-      const cost=(p.cost||0)+revenueCNY*0.15; // 采购成本+15%佣金物流
-      const profit=revenueCNY-cost;
-      const margin=Math.round(profit/revenueCNY*100);
-      totalProfit+=profit;totalRevenue+=revenueCNY;
-      const color=margin>=30?'var(--green-d)':margin>=15?'var(--orange)':'var(--red)';
-      html+='<div class="kpi-card"><div class="kpi-row"><span class="kpi-label">📦 '+esc(p.name)+'</span><span class="kpi-trend '+(margin>=20?'up':'down')+'">'+margin+'%</span></div><div style="display:flex;justify-content:space-between;font-size:13px;"><div><div style="color:var(--text3);">售价</div><div style="font-weight:600;">₽'+p.price+' (¥'+Math.round(revenueCNY)+')</div></div><div><div style="color:var(--text3);">成本</div><div style="font-weight:600;color:var(--red);">¥'+Math.round(cost)+'</div></div><div><div style="color:var(--text3);">利润</div><div style="font-weight:700;color:'+color+';">¥'+Math.round(profit)+'</div></div></div></div>';
+      const r=calcProfit(p,rate,cfg);
+      totalProfit+=r.profit;totalRevenue+=r.revenue;
+      const color=r.margin>=30?'var(--green-d)':r.margin>=15?'var(--orange)':'var(--red)';
+      html+='<div class="kpi-card"><div class="kpi-row"><span class="kpi-label">📦 '+esc(p.name)+'</span><span class="kpi-trend '+(r.margin>=20?'up':'down')+'">'+r.margin.toFixed(0)+'%</span></div><div style="display:flex;justify-content:space-between;font-size:13px;"><div><div style="color:var(--text3);">售价</div><div style="font-weight:600;">₽'+p.price+'</div></div><div><div style="color:var(--text3);">净利/单</div><div style="font-weight:700;color:'+color+';">¥'+Math.round(r.profit)+'</div></div><div><div style="color:var(--text3);">判断</div><div style="font-weight:700;color:'+color+';">'+r.verdict+'</div></div></div></div>';
     });
-    const totalMargin=Math.round(totalProfit/totalRevenue*100);
+    const totalMargin=totalRevenue?Math.round(totalProfit/totalRevenue*100):0;
     html+='<div class="cd cd-green"><div style="font-size:14px;">📊 总体利润</div><div style="display:flex;justify-content:space-between;margin-top:10px;"><div><div style="font-size:11px;opacity:.85;">总收入</div><div style="font-size:18px;font-weight:700;">¥'+Math.round(totalRevenue)+'</div></div><div><div style="font-size:11px;opacity:.85;">总利润</div><div style="font-size:18px;font-weight:700;">¥'+Math.round(totalProfit)+'</div></div><div><div style="font-size:11px;opacity:.85;">利润率</div><div style="font-size:18px;font-weight:700;">'+totalMargin+'%</div></div></div></div>';
   }
-  html+='<div class="cd cd-soft"><div style="font-size:13px;color:var(--green-t);line-height:1.6;">💡 <b>利润公式</b><br>利润 = 售价(₽)×汇率 - 采购成本(¥) - 佣金物流(15%)<br>💰 <b>健康指标</b><br>利润率>30% 优秀 · 15-30% 正常 · <15% 需优化</div></div>';
+  html+='<div class="cd cd-soft"><div style="font-size:13px;color:var(--green-t);line-height:1.6;">💡 <b>判断标准</b><br>净利率 >30% 值得卖 · 15-30% 可接受 · &lt;15% 建议优化<br>💰 <b>降低成本思路</b><br>① 物流选更便宜的渠道 ② 减少广告占比 ③ 谈更低佣金 ④ 批量采购摊薄成本</div></div>';
   document.getElementById('pg-profit').innerHTML=html;
 };
+function saveProfitCfg(){
+  DB.set('profitCfg',{
+    commission:parseFloat(val('pc-comm'))||15,
+    logistics:parseFloat(val('pc-log'))||0,
+    ads:parseFloat(val('pc-ads'))||0,
+    lossRate:parseFloat(val('pc-loss'))||0.5,
+    extra:0
+  });
+  showToast('✅ 成本参数已保存');RENDER.profit();
+}
 
 // 5. 英语+俄语
 RENDER.lang=function(){
@@ -676,6 +814,19 @@ RENDER.review=function(){
   html+='<div class="sh-r"><div class="sh-t"><span class="e">📋</span>今日复盘</div></div>';
   html+='<div class="cd"><div class="fg"><label class="fl">今天完成的工作</label><textarea class="fta" id="rv-d" placeholder="完成了哪些...">'+esc(dr.done||'')+'</textarea></div><div class="fg"><label class="fl">遇到的问题</label><textarea class="fta" id="rv-i" placeholder="遇到了什么问题...">'+esc(dr.issue||'')+'</textarea></div><div class="fg"><label class="fl">明天计划</label><textarea class="fta" id="rv-p" placeholder="明天要做什么...">'+esc(dr.plan||'')+'</textarea></div><button class="btn btn-p btn-blk" onclick="saveReview()">保存复盘</button></div>';
 
+  // 差评/低分评价监控
+  const alerts=DB.get('reviewAlerts',[]);
+  const todayAlerts=alerts.filter(a=>a.date===todayStr());
+  const lowAlerts=todayAlerts.filter(a=>a.level<=2).length;
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">⚠️</span>差评/低分监控</div><span class="sh-a" onclick="openAlertModal()">+ 记录</span></div>';
+  html+='<div class="cd"><div style="font-size:12px;color:'+(lowAlerts>0?'var(--red)':'var(--green)')+';margin-bottom:8px;">'+(lowAlerts>0?'🔴 今日 '+lowAlerts+' 条低分评价待处理':'✅ 今日暂无低分评价')+'</div>';
+  if(todayAlerts.length===0){html+='<div class="empty"><div class="t">今天没有评价记录</div></div>'}
+  else{todayAlerts.slice().reverse().forEach(a=>{
+    const lv=['⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','⭐⭐⭐⭐⭐'][a.level-1]||'';
+    html+='<div class="fin-item"><div class="fin-ic">'+(a.level<=2?'🔴':'🟢')+'</div><div class="fin-nm"><b>'+esc(a.product||'产品')+' '+lv+'</b><div style="font-size:11px;color:var(--text3);">'+esc(a.note||'')+'</div></div><span class="t-del" onclick="delAlert(\''+a.id+'\')">×</span></div>';
+  })}
+  html+='</div>';
+
   // 周目标
   const mk=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   const mr=reviews['m_'+mk]||{};
@@ -690,6 +841,21 @@ function openTaskModal(){const h='<div class="modal-bg on" id="task-modal"><div 
 function saveTask(){const n=val('t-name');if(!n){showToast('请输入名称');return}const t=DB.get('tasks',[]);t.push({id:gid(),name:n,time:val('t-time'),done:false,date:todayStr()});DB.set('tasks',t);document.getElementById('task-modal').remove();showToast('已添加');RENDER.review()}
 function saveReview(){const r=DB.get('reviews',{});r[todayStr()]={done:val('rv-d'),issue:val('rv-i'),plan:val('rv-p')};DB.set('reviews',r);showToast('✅ 复盘已保存')}
 function saveMonthly(){const r=DB.get('reviews',{});const n=new Date();r['m_'+n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')]={gmv:val('rv-gmv'),sku:val('rv-sku'),other:val('rv-other')};DB.set('reviews',r);showToast('✅ 目标已保存')}
+
+// 差评/低分评价录入
+function openAlertModal(){
+  const h='<div class="modal-bg on" id="alert-modal"><div class="modal"><div class="modal-hd"><div class="modal-tt">记录评价</div><button class="modal-x" onclick="document.getElementById(\'alert-modal\').remove()">×</button></div><div class="fg"><label class="fl">产品</label><input class="fi" id="al-product" placeholder="如 便携榨汁机"></div><div class="fg"><label class="fl">星级</label><div class="chips" id="al-chips"><div class="chip on" data-v="1">⭐ 1星</div><div class="chip" data-v="2">⭐⭐ 2星</div><div class="chip" data-v="3">⭐⭐⭐ 3星</div><div class="chip" data-v="4">⭐⭐⭐⭐ 4星</div><div class="chip" data-v="5">⭐⭐⭐⭐⭐ 5星</div></div></div><div class="fg"><label class="fl">备注</label><input class="fi" id="al-note" placeholder="差评原因，如 物流太慢"></div><button class="btn btn-p btn-blk" onclick="saveAlert()">保存</button></div></div>';
+  document.body.insertAdjacentHTML('beforeend',h);
+  document.querySelectorAll('#al-chips .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#al-chips .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on')});
+}
+function saveAlert(){
+  const lv=parseInt(document.querySelector('#al-chips .chip.on').dataset.v)||3;
+  const a=DB.get('reviewAlerts',[]);
+  a.push({id:gid(),product:val('al-product'),level:lv,note:val('al-note'),date:todayStr()});
+  DB.set('reviewAlerts',a);
+  document.getElementById('alert-modal').remove();showToast('✅ 已记录');RENDER.review();
+}
+function delAlert(id){DB.set('reviewAlerts',DB.get('reviewAlerts',[]).filter(x=>x.id!==id));RENDER.review()}
 
 // 7. 记账汇率
 RENDER.finance=function(){
@@ -786,6 +952,16 @@ RENDER.settings=function(){
   html+='<div class="sh-r"><div class="sh-t"><span class="e">🎨</span>外观设置</div></div>';
   html+='<div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;"><div><div style="font-size:14px;">🌙 暗色模式</div><div style="font-size:11px;color:var(--text3);">适合夜间使用，保护眼睛</div></div><div style="width:48px;height:26px;background:'+(darkMode?'var(--green)':'var(--border)')+';border-radius:13px;position:relative;cursor:pointer;transition:.3s;" onclick="toggleDark()"><div style="position:absolute;top:3px;'+(darkMode?'right:3px;background:#fff':'left:3px;background:var(--text3)')+';width:20px;height:20px;border-radius:50%;transition:.3s;"></div></div></div></div>';
 
+  // 提醒中心
+  const rc=DB.get('remindCfg',{});
+  const notiGranted=('Notification'in window)&&Notification.permission==='granted';
+  html+='<div class="sh-r"><div class="sh-t"><span class="e">🔔</span>提醒中心</div></div>';
+  html+='<div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;"><div><div style="font-size:14px;">🔔 系统通知</div><div style="font-size:11px;color:'+(notiGranted?'var(--green)':'var(--orange)')+';">'+(notiGranted?'已开启 · 实时提醒':'未授权，请点右侧开启')+'</div></div>'+(notiGranted?'<span class="atag" style="color:var(--green)">已开启</span>':'<button class="btn btn-p" style="padding:6px 12px;font-size:12px;" onclick="enableNotify()">开启通知</button>')+'</div></div>';
+  html+='<div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;" onclick="toggleRemind(\'digest\')"><div><div style="font-size:14px;">☀️ 每日晨报</div><div style="font-size:11px;color:var(--text3);">每天09:00推送待发货/待办/昨日GMV</div></div><div style="width:44px;height:24px;background:'+(rc.digest!==false?'var(--green)':'var(--border)')+';border-radius:12px;position:relative;cursor:pointer;"><div style="position:absolute;top:3px;'+(rc.digest!==false?'right:3px;background:#fff':'left:3px;background:var(--text3)')+';width:18px;height:18px;border-radius:50%;"></div></div></div>';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;" onclick="toggleRemind(\'orders\')"><div><div style="font-size:14px;">📦 待发货提醒</div><div style="font-size:11px;color:var(--text3);">有未发货订单时通知</div></div><div style="width:44px;height:24px;background:'+(rc.orders!==false?'var(--green)':'var(--border)')+';border-radius:12px;position:relative;cursor:pointer;"><div style="position:absolute;top:3px;'+(rc.orders!==false?'right:3px;background:#fff':'left:3px;background:var(--text3)')+';width:18px;height:18px;border-radius:50%;"></div></div></div>';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;" onclick="toggleRemind(\'reviews\')"><div><div style="font-size:14px;">⚠️ 差评提醒</div><div style="font-size:11px;color:var(--text3);">有低分评价时通知</div></div><div style="width:44px;height:24px;background:'+(rc.reviews!==false?'var(--green)':'var(--border)')+';border-radius:12px;position:relative;cursor:pointer;"><div style="position:absolute;top:3px;'+(rc.reviews!==false?'right:3px;background:#fff':'left:3px;background:var(--text3)')+';width:18px;height:18px;border-radius:50%;"></div></div></div>';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;" onclick="toggleRemind(\'reviewDone\')"><div><div style="font-size:14px;">📋 复盘提醒</div><div style="font-size:11px;color:var(--text3);">晚上没做复盘时提醒</div></div><div style="width:44px;height:24px;background:'+(rc.reviewDone!==false?'var(--green)':'var(--border)')+';border-radius:12px;position:relative;cursor:pointer;"><div style="position:absolute;top:3px;'+(rc.reviewDone!==false?'right:3px;background:#fff':'left:3px;background:var(--text3)')+';width:18px;height:18px;border-radius:50%;"></div></div></div></div>';
+
   // API状态
   html+='<div class="cd"><div style="font-size:13px;font-weight:600;margin-bottom:8px;">📊 系统状态</div>';
   html+='<div class="fin-item"><div class="fin-ic">🔌</div><div class="fin-nm">API连接状态</div><span class="api-badge '+(apiOk?'ok':'no')+'">'+(apiOk?'已连接':'未配置')+'</span></div>';
@@ -796,13 +972,28 @@ RENDER.settings=function(){
   html+='<div class="sh-r"><div class="sh-t"><span class="e">🗑️</span>数据管理</div></div>';
   html+='<div class="cd"><button class="btn btn-o btn-blk" onclick="exportData()">📤 导出全部数据</button><button class="btn btn-blk" style="margin-top:8px;" onclick="importData()">📥 导入备份数据</button><button class="btn btn-blk" style="margin-top:8px;color:var(--red);" onclick="clearData()">🗑️ 清除全部数据</button></div>';
 
-  html+='<div class="cd" style="text-align:center;font-size:12px;color:var(--text3);">Ozon卖家工作台 v5.0<br>© 2026 邢怀振</div>';
+  html+='<div class="cd" style="text-align:center;font-size:12px;color:var(--text3);">Ozon卖家工作台 v6.0<br>新增：🔔提醒通知 · 🧮利润测算引擎<br>© 2026 邢怀振</div>';
   document.getElementById('pg-settings').innerHTML=html;
 };
 
 function saveCreds(){
   DB.set('ozonCreds',{clientId:val('set-clientid').trim(),apiKey:val('set-apikey').trim()});
   showToast('✅ 凭证已保存');RENDER.settings();
+}
+
+// ========== 提醒开关 ==========
+function enableNotify(){
+  if(!('Notification'in window)){showToast('⚠️ 当前浏览器不支持通知');return}
+  Notification.requestPermission().then(function(p){
+    if(p==='granted'){showToast('✅ 通知已开启');RENDER.settings()}
+    else{showToast('❌ 通知被拒绝，请在浏览器设置中开启')}
+  });
+}
+function toggleRemind(key){
+  const cfg=DB.get('remindCfg',{});
+  cfg[key]=!(cfg[key]!==false); // 翻转
+  DB.set('remindCfg',cfg);
+  RENDER.settings();
 }
 
 async function testCreds(){
@@ -877,10 +1068,13 @@ function buildPages(){let html='';MENUS.forEach(m=>{html+='<div class="pg '+(m.i
 
 // ========== 启动 ==========
 applyTheme();initData();buildDrawer();buildPages();go('dashboard');
+// 启动提醒系统：每30分钟检查一次，并立即跑一次
+setTimeout(()=>REMINDER.run(),5000);
+setInterval(()=>REMINDER.run(),30*60*1000);
 
 // Service Worker (network-first)
 if('serviceWorker'in navigator){
-  var swCode='var C="oz-v5";self.addEventListener("install",function(e){self.skipWaiting()});self.addEventListener("activate",function(e){e.waitUntil(self.clients.claim().then(function(){return caches.keys().then(function(ks){ks.forEach(function(k){if(k!==C)caches.delete(k)})})}))});self.addEventListener("fetch",function(e){if(e.request.method!=="GET")return;e.respondWith(fetch(e.request).then(function(res){var c=res.clone();caches.open(C).then(function(ca){ca.put(e.request,c)});return res}).catch(function(){return caches.match(e.request).then(function(r){return r||caches.match("./")})}))});';
+  var swCode='var C="oz-v6";self.addEventListener("install",function(e){self.skipWaiting()});self.addEventListener("activate",function(e){e.waitUntil(self.clients.claim().then(function(){return caches.keys().then(function(ks){ks.forEach(function(k){if(k!==C)caches.delete(k)})})}))});self.addEventListener("fetch",function(e){if(e.request.method!=="GET")return;e.respondWith(fetch(e.request).then(function(res){var c=res.clone();caches.open(C).then(function(ca){ca.put(e.request,c)});return res}).catch(function(){return caches.match(e.request).then(function(r){return r||caches.match("./")})}))});';
   try{
     var swBlob=new Blob([swCode],{type:'text/javascript'});
     navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(function(){});
