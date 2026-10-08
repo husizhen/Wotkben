@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Ozon工作台">
 <meta name="theme-color" content="#5BA888">
-<title>Ozon卖家工作台</title>
+<title>Ozon FBS 专业工作台 V7</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
@@ -115,6 +115,9 @@ html,body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica 
 .chart-col:hover{opacity:.8}
 .chart-label{font-size:10px;color:var(--text3);text-align:center;margin-top:2px}
 .rub-card{background:linear-gradient(135deg,var(--blue),#3A7BC8);color:#fff;border-radius:var(--r);padding:16px;margin-bottom:10px}
+
+/* ===== Ozon FBS V7 ===== */
+.v7-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.v7-kpi{background:var(--card);border-radius:14px;padding:12px;box-shadow:var(--sh)}.v7-kpi .v{font-size:22px;font-weight:800;color:var(--green-d);margin-top:3px}.v7-kpi .l{font-size:11px;color:var(--text3)}.v7-kpi .s{font-size:11px;color:var(--text2);margin-top:3px}.v7-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.v7-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.v7-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid var(--border)}.v7-row:last-child{border-bottom:0}.v7-title{font-size:15px;font-weight:700}.v7-sub{font-size:11px;color:var(--text3)}.v7-badge{display:inline-flex;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:600}.v7-green{background:var(--green-s);color:var(--green-t)}.v7-orange{background:var(--orange-s);color:var(--orange)}.v7-red{background:#FFE5E5;color:var(--red)}.v7-blue{background:var(--blue-s);color:var(--blue)}.v7-num{font-weight:800}.v7-table{width:100%;border-collapse:collapse;font-size:12px}.v7-table th{text-align:left;color:var(--text3);font-weight:500;padding:8px 5px;border-bottom:1px solid var(--border)}.v7-table td{padding:9px 5px;border-bottom:1px solid var(--border);vertical-align:middle}.v7-table tr:last-child td{border-bottom:0}.v7-input{width:100%;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:9px;padding:9px 10px;font-size:13px}.v7-result{border-radius:14px;padding:14px;background:var(--green-s);margin-top:10px}.v7-profit{font-size:26px;font-weight:800;color:var(--green-d)}.v7-actions{display:flex;gap:7px;flex-wrap:wrap}.v7-actions .btn{flex:1;min-width:120px}.v7-meter{height:8px;background:var(--border);border-radius:8px;overflow:hidden;margin-top:6px}.v7-meter i{display:block;height:100%;background:var(--green);border-radius:8px}.v7-alert{border-left:4px solid var(--orange);background:var(--orange-s);padding:10px;border-radius:10px;margin-bottom:8px;font-size:12px}@media(max-width:700px){.v7-grid{grid-template-columns:repeat(2,1fr)}.v7-2{grid-template-columns:1fr}.v7-3{grid-template-columns:1fr 1fr}.v7-table{min-width:620px}.v7-scroll{overflow-x:auto}}
 </style>
 </head>
 <body>
@@ -272,16 +275,17 @@ function getKPIHistory(days){
 
 // ========== 菜单配置 ==========
 const MENUS=[
-  {id:'dashboard',e:'📊',t:'数据看板',g:'运营'},
-  {id:'selection',e:'🛒',t:'选品上架',g:'运营'},
-  {id:'orders',e:'📦',t:'订单管理',g:'运营'},
-  {id:'profit',e:'💰',t:'利润计算',g:'运营'},
-  {id:'lang',e:'🔤',t:'英语俄语',g:'辅助'},
-  {id:'review',e:'📋',t:'复盘计划',g:'辅助'},
-  {id:'finance',e:'📒',t:'记账汇率',g:'辅助'},
-  {id:'life',e:'🥗',t:'运动饮食',g:'生活'},
-  {id:'learn',e:'📚',t:'学习成长',g:'生活'},
-  {id:'settings',e:'⚙️',t:'设置',g:'系统'}
+{id:'dashboard',e:'📊',t:'总控台',g:'核心运营'},
+{id:'selection',e:'🔎',t:'今日选品',g:'核心运营'},
+{id:'profit',e:'💰',t:'产品利润',g:'核心运营'},
+{id:'orders',e:'📦',t:'FBS订单',g:'核心运营'},
+{id:'logistics',e:'🚚',t:'GUOO物流',g:'供应链'},
+{id:'supply',e:'🏭',t:'1688供应链',g:'供应链'},
+{id:'listing',e:'🛒',t:'Ozon上架',g:'供应链'},
+{id:'review',e:'📈',t:'产品测试',g:'数据复盘'},
+{id:'finance',e:'💰',t:'财务结算',g:'数据复盘'},
+{id:'lang',e:'🔤',t:'俄语辅助',g:'辅助工具'},
+{id:'settings',e:'⚙️',t:'系统设置',g:'系统'}
 ];
 
 // ========== 数据初始化 ==========
@@ -1053,6 +1057,86 @@ RENDER.learn=function(){
   document.getElementById('pg-learn').innerHTML=html;
 };
 
+
+/* ===== Ozon FBS V7 工作台 ===== */
+const V7={
+get products(){return DB.get('v7_products',[])},set products(v){DB.set('v7_products',v)},
+get logistics(){return DB.get('v7_logistics',{extraSmall:{fixed:3.37,kg:28.1},budget:{fixed:25.83,kg:19.1},small:{fixed:17.97,kg:28.1},big:{fixed:40.44,kg:19.1},premiumSmall:{fixed:24.71,kg:28.1},premiumBig:{fixed:69.64,kg:25.8}})},
+saveLogistics(v){DB.set('v7_logistics',v)},
+fmt(n,d=0){return Number(n||0).toLocaleString('zh-CN',{maximumFractionDigits:d})},
+score(p){let s=0;s+=Math.min(15,(+p.demand||0)/100*15);s+=Math.min(15,(+p.search||0)/100*15);s+=Math.min(10,(+p.competition||0)/100*10);s+=Math.min(10,(+p.supply||0)/100*10);s+=Math.min(15,(+p.margin||0)/60*15);s+=Math.min(10,(+p.logistics||0)/100*10);s+=Math.min(10,(+p.afterSales||0)/100*10);s+=Math.min(5,(+p.season||0)/100*5);s+=Math.min(5,(+p.stability||0)/100*5);s+=Math.min(5,(+p.compliance||0)/100*5);return Math.round(Math.max(0,Math.min(100,s)))},
+logisticsFee(value,weight){const w=+weight||0,v=+value||0;let k;if(v<=135&&w<=.5)k=this.logistics.extraSmall;else if(v<=135)k=this.logistics.budget;else if(v<=635&&w<=2)k=this.logistics.small;else if(v<=635)k=this.logistics.big;else if(w<=5)k=this.logistics.premiumSmall;else k=this.logistics.premiumBig;return {fee:k.fixed+w*k.kg,band:k}}
+};
+
+RENDER.dashboard=function(){
+document.getElementById('hdr-d').textContent='FBS经营总览 · 今日';const ps=V7.products,orders=DB.get('orders_manual',[]),pending=orders.filter(o=>o.status==='pending').length,k=DB.get('manualKPI',{})[todayStr()]||{},gmv=+k.gmv||0,orderN=+k.orders||orders.filter(o=>o.date===todayStr()).length,cost=+k.cost||0,profit=gmv-cost,tested=ps.filter(p=>p.status==='测试中').length,ready=ps.filter(p=>p.status==='待测试').length,scale=ps.filter(p=>p.status==='放量').length;
+let html='<div class="v7-grid"><div class="v7-kpi"><div class="l">今日GMV ₽</div><div class="v">'+V7.fmt(gmv)+'</div><div class="s">'+orderN+' 单</div></div><div class="v7-kpi"><div class="l">预计净利润 ₽</div><div class="v">'+V7.fmt(profit)+'</div><div class="s">按已录入成本</div></div><div class="v7-kpi"><div class="l">待发货</div><div class="v">'+pending+'</div><div class="s">FBS订单</div></div><div class="v7-kpi"><div class="l">测试产品</div><div class="v">'+tested+'</div><div class="s">待测 '+ready+' · 放量 '+scale+'</div></div></div>';
+if(pending>0)html+='<div class="v7-alert">📦 <b>今天先处理 '+pending+' 个待发货订单</b>：FBS订单时效优先。</div>';
+html+='<div class="cd"><div class="v7-title">🎯 今日四个核心动作</div><div class="v7-2"><div><div class="v7-row"><span>① 选品</span><span class="v7-badge v7-green">'+ready+' 个待测试</span></div><div class="v7-row"><span>② 上架</span><span class="v7-badge v7-blue">'+ps.filter(p=>p.listing==='待上架').length+' 个</span></div></div><div><div class="v7-row"><span>③ FBS发货</span><span class="v7-badge v7-orange">'+pending+' 单</span></div><div class="v7-row"><span>④ 产品复盘</span><span class="v7-badge v7-green">今日待做</span></div></div></div></div>';
+html+='<div class="cd"><div class="sh-r" style="margin-top:0"><div class="v7-title">🔥 产品池</div><span class="sh-a" onclick="go(\'selection\')">进入选品 →</span></div>';
+if(!ps.length)html+='<div class="empty"><div class="e">🛒</div><div class="t">还没有产品，进入“今日选品”建立第一批测试款。</div></div>';else{html+='<div class="v7-scroll"><table class="v7-table"><thead><tr><th>产品</th><th>售价</th><th>重量</th><th>评分</th><th>状态</th></tr></thead><tbody>';ps.slice(0,8).forEach(p=>{const s=V7.score(p);html+='<tr><td><b>'+esc(p.name)+'</b></td><td>¥'+V7.fmt(p.price,2)+'</td><td>'+V7.fmt(p.weight,2)+'kg</td><td><b>'+s+'</b>/100</td><td><span class="v7-badge '+(p.status==='放量'?'v7-green':p.status==='淘汰'?'v7-red':'v7-orange')+'">'+esc(p.status||'待测试')+'</span></td></tr>'});html+='</tbody></table></div>';}
+html+='</div><div class="v7-2"><div class="cd"><div class="v7-title">🚚 GUOO物流</div><div class="v7-row"><span>核心重量段</span><b>0.8–1.8kg</b></div><div class="v7-row"><span>目标物流占售价</span><b>≤15%</b></div><div class="v7-row"><span>内部成本</span><span class="v7-badge v7-orange">待录入</span></div></div><div class="cd"><div class="v7-title">💡 当前模式</div><div class="v7-row"><span>售价底线</span><b>¥300+</b></div><div class="v7-row"><span>履约</span><b>FBS</b></div><div class="v7-row"><span>供货</span><b>1688一件代发</b></div></div></div>';
+document.getElementById('pg-dashboard').innerHTML=html;
+};
+
+RENDER.selection=function(){
+document.getElementById('hdr-d').textContent='选品引擎 · 建立测试池';const ps=V7.products;
+let html='<div class="cd cd-green"><div class="v7-title">🔎 Ozon FBS 选品引擎</div><div style="font-size:12px;margin-top:5px;opacity:.9">售价 ¥300+ · 1688一件代发 · 安徽久和仓/GUOO · 先测后放量</div></div>';
+html+='<div class="cd"><div class="v7-title">新增产品</div><div class="v7-2" style="margin-top:10px"><input id="v7-p-name" class="v7-input" placeholder="产品名称"><input id="v7-p-sku" class="v7-input" placeholder="SKU/1688链接备注"></div><div class="v7-3" style="margin-top:8px"><input id="v7-p-price" type="number" class="v7-input" placeholder="售价 ¥"><input id="v7-p-buy" type="number" class="v7-input" placeholder="1688采购 ¥"><input id="v7-p-weight" type="number" step=".01" class="v7-input" placeholder="重量 kg"></div><div class="v7-3" style="margin-top:8px"><input id="v7-p-gross" type="number" class="v7-input" placeholder="Ozon佣金率 %"><input id="v7-p-ad" type="number" class="v7-input" placeholder="广告/单 ¥"><input id="v7-p-return" type="number" class="v7-input" placeholder="售后损耗/单 ¥"></div><div class="v7-actions" style="margin-top:10px"><button class="btn btn-p" onclick="v7AddProduct()">＋加入测试池</button><button class="btn" onclick="go(\'profit\')">🧮利润测算</button></div></div>';
+html+='<div class="cd"><div class="sh-r" style="margin-top:0"><div class="v7-title">产品测试池（'+ps.length+'）</div><span class="sh-a" onclick="v7Seed()">导入示例</span></div>';
+if(!ps.length)html+='<div class="empty"><div class="e">📦</div><div class="t">建议先录入10个候选款，再用利润与物流筛选。</div></div>';else{html+='<div class="v7-scroll"><table class="v7-table"><thead><tr><th>产品</th><th>售价</th><th>采购</th><th>重量</th><th>物流</th><th>预计利润</th><th>评分</th><th>状态</th><th></th></tr></thead><tbody>';ps.forEach((p,i)=>{const lf=V7.logisticsFee(p.price,p.weight).fee,commission=(+p.price||0)*(+p.commission||0)/100,profit=(+p.price||0)-(+p.buy||0)-lf-commission-(+p.ad||0)-(+p.ret||0),s=V7.score(p);html+='<tr><td><b>'+esc(p.name)+'</b></td><td>¥'+V7.fmt(p.price,2)+'</td><td>¥'+V7.fmt(p.buy,2)+'</td><td>'+V7.fmt(p.weight,2)+'kg</td><td>¥'+V7.fmt(lf,2)+'</td><td><b>¥'+V7.fmt(profit,2)+'</b></td><td>'+s+'</td><td><span class="v7-badge '+(p.status==='放量'?'v7-green':p.status==='淘汰'?'v7-red':'v7-orange')+'">'+esc(p.status||'待测试')+'</span></td><td><button class="btn" style="padding:5px 8px" onclick="v7DeleteProduct('+i+')">删</button></td></tr>';});html+='</tbody></table></div>';}
+html+='</div>';document.getElementById('pg-selection').innerHTML=html;
+};
+function v7AddProduct(){const name=val('v7-p-name').trim(),price=+val('v7-p-price'),buy=+val('v7-p-buy'),weight=+val('v7-p-weight');if(!name||price<300||!weight){showToast('请填写产品名、售价≥300、重量');return}const ps=V7.products;ps.unshift({id:gid(),name,sku:val('v7-p-sku'),price,buy,weight,commission:+val('v7-p-gross')||15,ad:+val('v7-p-ad')||0,ret:+val('v7-p-return')||0,status:'待测试',listing:'待上架',demand:70,search:60,competition:50,supply:70,margin:60,logistics:80,afterSales:80,season:70,stability:80,compliance:90});V7.products=ps;showToast('已加入测试池');RENDER.selection()}
+function v7DeleteProduct(i){const ps=V7.products;ps.splice(i,1);V7.products=ps;RENDER.selection()}
+function v7Seed(){const ps=V7.products;[['汽车后备箱收纳箱',399,88,1.2],['车载座椅缝隙收纳盒',329,58,.8],['旅行电子配件收纳包',359,45,.5],['折叠鞋托盘',319,72,1.1],['宠物除毛手套套装',309,28,.35]].forEach(x=>ps.push({id:gid(),name:x[0],sku:'TEST-'+Date.now(),price:x[1],buy:x[2],weight:x[3],commission:15,ad:15,ret:10,status:'待测试',listing:'待上架',demand:70,search:60,competition:50,supply:80,margin:60,logistics:80,afterSales:80,season:70,stability:80,compliance:90}));V7.products=ps;showToast('已加入5个示例款');RENDER.selection()}
+
+RENDER.profit=function(){
+document.getElementById('hdr-d').textContent='产品利润 · FBS真实成本模型';const p=V7.products[0]||{price:599,buy:120,weight:1.5,commission:15,ad:20,ret:15};
+let html='<div class="cd cd-green"><div class="v7-title">🧮 FBS单品利润测算</div><div style="font-size:12px;margin-top:5px;opacity:.9">采购 → 安徽久和仓 → GUOO → Ozon → 广告/售后 → 净利润</div></div><div class="cd"><div class="v7-3"><div><label class="fl">售价 ¥</label><input id="pf-price" class="v7-input" type="number" value="'+p.price+'"></div><div><label class="fl">1688采购 ¥</label><input id="pf-buy" class="v7-input" type="number" value="'+p.buy+'"></div><div><label class="fl">重量 kg</label><input id="pf-weight" class="v7-input" type="number" step=".01" value="'+p.weight+'"></div></div><div class="v7-3" style="margin-top:8px"><div><label class="fl">Ozon佣金 %</label><input id="pf-commission" class="v7-input" type="number" value="'+(p.commission||15)+'"></div><div><label class="fl">广告/单 ¥</label><input id="pf-ad" class="v7-input" type="number" value="'+(p.ad||0)+'"></div><div><label class="fl">售后损耗/单 ¥</label><input id="pf-ret" class="v7-input" type="number" value="'+(p.ret||0)+'"></div></div><div class="v7-actions" style="margin-top:10px"><button class="btn btn-p" onclick="v7CalcProfit()">立即测算</button></div><div id="pf-result"></div></div><div class="cd"><div class="v7-title">📐 公式</div><div class="v7-sub" style="line-height:1.9;margin-top:6px">净利润 = 售价 − 采购 − FBS物流 − Ozon佣金 − 广告 − 售后损耗<br>物流费使用当前工作台费率；GUOO实际内部成本未知，不冒充利润。</div></div>';
+document.getElementById('pg-profit').innerHTML=html;v7CalcProfit();
+};
+function v7CalcProfit(){const price=+val('pf-price'),buy=+val('pf-buy'),weight=+val('pf-weight'),cr=+val('pf-commission'),ad=+val('pf-ad'),ret=+val('pf-ret'),lf=V7.logisticsFee(price,weight).fee,comm=price*cr/100,profit=price-buy-lf-comm-ad-ret,margin=price?profit/price*100:0;const r=document.getElementById('pf-result');if(!r)return;r.innerHTML='<div class="v7-result"><div class="v7-sub">预计单件净利润</div><div class="v7-profit">¥'+V7.fmt(profit,2)+'</div><div style="margin-top:8px">净利率 <b>'+V7.fmt(margin,1)+'%</b> · FBS物流 <b>¥'+V7.fmt(lf,2)+'</b> · 物流占售价 <b>'+V7.fmt(lf/price*100,1)+'%</b></div><div style="margin-top:8px" class="v7-badge '+(profit>=price*.15?'v7-green':profit>=0?'v7-orange':'v7-red')+'">'+(profit>=price*.15?'🟢 建议测试':profit>=0?'🟡 谨慎测试':'🔴 不建议')+'</div></div>'}
+
+RENDER.orders=function(){
+document.getElementById('hdr-d').textContent='FBS订单 · 待发货优先';const os=DB.get('orders_manual',[]),pending=os.filter(o=>o.status==='pending').length,done=os.filter(o=>o.status==='done').length;
+let html='<div class="cd cd-green"><div class="v7-title">📦 FBS订单管理</div><div style="font-size:12px;margin-top:5px;opacity:.9">当前支持手工录入；配置Ozon API后再接自动同步。</div></div><div class="cd"><div class="v7-2"><input id="ord-no" class="v7-input" placeholder="Ozon订单号"><input id="ord-name" class="v7-input" placeholder="产品/SKU"></div><div class="v7-3" style="margin-top:8px"><input id="ord-price" type="number" class="v7-input" placeholder="售价 ₽"><input id="ord-rmb" type="number" class="v7-input" placeholder="对应成本 ¥"><select id="ord-status" class="v7-input"><option value="pending">待发货</option><option value="shipped">已发货</option><option value="done">已完成</option><option value="return">退货</option></select></div><button class="btn btn-p" style="margin-top:10px" onclick="v7AddOrder()">＋记录订单</button></div><div class="v7-grid"><div class="v7-kpi"><div class="l">全部</div><div class="v">'+os.length+'</div></div><div class="v7-kpi"><div class="l">待发货</div><div class="v">'+pending+'</div></div><div class="v7-kpi"><div class="l">已完成</div><div class="v">'+done+'</div></div><div class="v7-kpi"><div class="l">退货</div><div class="v">'+os.filter(o=>o.status==='return').length+'</div></div></div><div class="cd"><div class="v7-scroll"><table class="v7-table"><thead><tr><th>订单号</th><th>产品</th><th>售价 ₽</th><th>成本 ¥</th><th>状态</th><th>日期</th></tr></thead><tbody>';
+os.slice(0,50).forEach(o=>{html+='<tr><td>'+esc(o.no||'-')+'</td><td>'+esc(o.name||'-')+'</td><td>'+V7.fmt(o.priceRub,2)+'</td><td>¥'+V7.fmt(o.costRmb,2)+'</td><td><span class="v7-badge '+(o.status==='pending'?'v7-orange':o.status==='return'?'v7-red':'v7-green')+'">'+esc({pending:'待发货',shipped:'已发货',done:'已完成',return:'退货'}[o.status]||o.status)+'</span></td><td>'+esc(o.date||'')+'</td></tr>'});html+='</tbody></table></div></div>';document.getElementById('pg-orders').innerHTML=html;
+};
+function v7AddOrder(){const no=val('ord-no').trim(),name=val('ord-name').trim();if(!no||!name){showToast('请填写订单号和产品');return}const os=DB.get('orders_manual',[]);os.unshift({id:gid(),no,name,priceRub:+val('ord-price')||0,costRmb:+val('ord-rmb')||0,status:val('ord-status'),date:todayStr()});DB.set('orders_manual',os);showToast('订单已记录');RENDER.orders()}
+
+RENDER.logistics=function(){
+document.getElementById('hdr-d').textContent='GUOO物流 · 成本监控';const l=V7.logistics;
+let html='<div class="cd" style="background:var(--blue);color:#fff"><div class="v7-title">🚚 GUOO / Ozon合作伙伴物流</div><div style="font-size:12px;margin-top:5px;opacity:.9">卖家侧物流收费基准 ≠ GUOO内部利润。</div></div><div class="cd"><div class="v7-title">当前费率（可按你的真实账单修改）</div><div class="v7-scroll"><table class="v7-table"><thead><tr><th>档位</th><th>固定 ₽</th><th>每克 ₽</th></tr></thead><tbody>';
+Object.entries(l).forEach(([k,x])=>{html+='<tr><td>'+esc(k)+'</td><td><input class="v7-input" style="width:110px" id="lf-'+k+'-f" value="'+x.fixed+'"></td><td><input class="v7-input" style="width:110px" id="lf-'+k+'-k" value="'+x.kg+'"></td></tr>'});html+='</tbody></table></div><button class="btn btn-p" style="margin-top:10px" onclick="v7SaveLogistics()">保存费率</button></div><div class="cd"><div class="v7-title">物流利润反推</div><div class="v7-3" style="margin-top:8px"><input id="lg-value" class="v7-input" type="number" placeholder="货值 ¥"><input id="lg-weight" class="v7-input" type="number" step=".01" placeholder="重量 kg"><input id="lg-cost" class="v7-input" type="number" step=".01" placeholder="已知实际成本 ¥"></div><button class="btn btn-p" style="margin-top:10px" onclick="v7ReverseLogistics()">反推</button><div id="lg-result"></div></div><div class="cd"><div class="v7-title">⚠️ 当前最重要的数据</div><div class="v7-sub" style="line-height:1.8">把Ozon结算中的“合作伙伴服务/配送服务”和GUOO对账单对应起来，才能反推出GUOO收入、安徽久和仓操作成本和实际运输成本。</div></div>';
+document.getElementById('pg-logistics').innerHTML=html;
+};
+function v7SaveLogistics(){const l=V7.logistics;Object.keys(l).forEach(k=>{l[k].fixed=+val('lf-'+k+'-f');l[k].kg=+val('lf-'+k+'-k')});V7.saveLogistics(l);showToast('费率已保存');RENDER.logistics()}
+function v7ReverseLogistics(){const value=+val('lg-value'),w=+val('lg-weight'),cost=+val('lg-cost'),r=V7.logisticsFee(value,w),out=document.getElementById('lg-result');if(!out)return;out.innerHTML='<div class="v7-result"><b>卖家侧物流费：₽'+V7.fmt(r.fee,2)+'</b><br><span class="v7-sub">固定费 + 重量费；填写成本后，差额仅为表面毛差，不等于GUOO净利润。</span>'+(cost?'<br>已知成本：¥'+V7.fmt(cost,2)+' · 差额：¥'+V7.fmt(r.fee-cost,2):'')+'</div>'}
+
+RENDER.supply=function(){
+document.getElementById('hdr-d').textContent='1688供应链 · 一件代发';let html='<div class="cd cd-green"><div class="v7-title">🏭 1688供应链工作区</div><div style="font-size:12px;margin-top:5px;opacity:.9">只选支持一件代发、稳定包装、可直接发安徽久和仓/跨境仓的供应商。</div></div><div class="cd"><div class="v7-title">供应商准入标准</div>';
+['支持一件代发','提供实际包装尺寸/重量','配合SKU/条码','发货≤48小时','支持退换/补发','长期供货稳定'].forEach((x,i)=>html+='<div class="v7-row"><span>① '+x+'</span><span class="v7-badge v7-green">必须</span></div>');
+html+='</div><div class="cd"><div class="v7-title">供应商记录</div><textarea id="sup-note" class="fta" placeholder="1688链接 / 供应商名称 / 采购价 / MOQ / 包装 / 发货时效 / 联系人备注"></textarea><button class="btn btn-p" style="margin-top:8px" onclick="DB.set(\'v7_supply_note\',val(\'sup-note\'));showToast(\'已保存\')">保存</button></div><div class="cd"><div class="v7-title">下一步</div><div class="v7-sub">把真实采购价、包装后重量、尺寸、国内运费填入“今日选品”，利润模型自动纳入物流。</div></div>';document.getElementById('pg-supply').innerHTML=html;const n=DB.get('v7_supply_note','');if(n)document.getElementById('sup-note').value=n;
+};
+
+RENDER.listing=function(){
+document.getElementById('hdr-d').textContent='Ozon上架 · 测试款';const ps=V7.products;let html='<div class="cd cd-green"><div class="v7-title">🛒 Ozon上架准备台</div><div style="font-size:12px;margin-top:5px;opacity:.9">先完成成本、俄语内容、重量尺寸和合规，再复制到Ozon后台。</div></div><div class="cd"><div class="v7-scroll"><table class="v7-table"><thead><tr><th>产品</th><th>售价</th><th>俄语标题</th><th>状态</th></tr></thead><tbody>';
+ps.forEach(p=>html+='<tr><td>'+esc(p.name)+'</td><td>¥'+V7.fmt(p.price)+'</td><td><input class="v7-input" placeholder="Введите название" value="'+esc(p.ruTitle||'')+'" onchange="v7SetTitle(\''+p.id+'\',this.value)"></td><td><span class="v7-badge '+(p.listing==='已上架'?'v7-green':'v7-orange')+'">'+esc(p.listing||'待上架')+'</span></td></tr>');
+html+='</tbody></table></div></div><div class="cd"><div class="v7-title">上架前检查</div>'+['主图≥3张','俄语标题/五点','重量尺寸真实','条码/包装确认','Ozon类目/属性','利润达到目标线'].map(x=>'<div class="v7-row"><span>□ '+x+'</span><span class="v7-badge v7-green">检查</span></div>').join('')+'</div>';document.getElementById('pg-listing').innerHTML=html;
+};
+function v7SetTitle(id,t){const ps=V7.products,p=ps.find(x=>x.id===id);if(p){p.ruTitle=t;V7.products=ps}}
+
+RENDER.review=function(){
+document.getElementById('hdr-d').textContent='产品测试 · 数据复盘';const ps=V7.products;let html='<div class="cd cd-green"><div class="v7-title">📈 测试 → 放量 → 淘汰</div><div style="font-size:12px;margin-top:5px;opacity:.9">用7天数据决定去留，不凭感觉。</div></div><div class="cd"><div class="v7-scroll"><table class="v7-table"><thead><tr><th>产品</th><th>状态</th><th>7天订单</th><th>GMV ₽</th><th>净利率</th><th>动作</th></tr></thead><tbody>';
+ps.forEach(p=>html+='<tr><td><b>'+esc(p.name)+'</b></td><td><span class="v7-badge '+(p.status==='放量'?'v7-green':p.status==='淘汰'?'v7-red':'v7-orange')+'">'+esc(p.status||'待测试')+'</span></td><td>'+((p.testOrders)||0)+'</td><td>'+V7.fmt(p.testGmv||0)+'</td><td>'+V7.fmt(p.testMargin||0,1)+'%</td><td><button class="btn" style="padding:5px 8px" onclick="v7Status(\''+p.id+'\',\'放量\')">放量</button> <button class="btn" style="padding:5px 8px" onclick="v7Status(\''+p.id+'\',\'淘汰\')">淘汰</button></td></tr>');html+='</tbody></table></div></div>';document.getElementById('pg-review').innerHTML=html;
+};
+function v7Status(id,s){const ps=V7.products,p=ps.find(x=>x.id===id);if(p){p.status=s;V7.products=ps;RENDER.review()}}
+
+RENDER.finance=function(){
+document.getElementById('hdr-d').textContent='财务结算 · Ozon真实账单';const k=DB.get('manualKPI',{})[todayStr()]||{};let html='<div class="cd cd-green"><div class="v7-title">💰 Ozon结算录入</div><div style="font-size:12px;margin-top:5px;opacity:.9">把后台截图/账单数字录入，逐步建立真实利润基线。</div></div><div class="cd"><div class="v7-3"><input id="fin-gmv" class="v7-input" type="number" placeholder="销售和退货 ₽" value="'+(k.gmv||'')+'"><input id="fin-ozon" class="v7-input" type="number" placeholder="Ozon佣金 ₽" value="'+(k.ozon||'')+'"><input id="fin-partner" class="v7-input" type="number" placeholder="合作伙伴服务 ₽" value="'+(k.partner||'')+'"></div><div class="v7-3" style="margin-top:8px"><input id="fin-delivery" class="v7-input" type="number" placeholder="配送服务 ₽" value="'+(k.delivery||'')+'"><input id="fin-discount" class="v7-input" type="number" placeholder="折扣积分 ₽" value="'+(k.discount||'')+'"><input id="fin-cost" class="v7-input" type="number" placeholder="其他成本折算 ¥" value="'+(k.cost||'')+'"></div><button class="btn btn-p" style="margin-top:10px" onclick="v7SaveFinance()">保存今日账单</button></div><div class="cd"><div class="v7-title">已录入参考账单</div><div class="v7-row"><span>销售和退货</span><b>₽10,333</b></div><div class="v7-row"><span>Ozon代理佣金</span><b>−₽1,963</b></div><div class="v7-row"><span>合作伙伴服务</span><b>−₽531</b></div><div class="v7-row"><span>配送服务</span><b>−₽200</b></div><div class="v7-row"><span>总计</span><b>₽7,639</b></div><div class="v7-sub" style="margin-top:8px">⚠️ “合作伙伴服务”不能直接视为GUOO利润，需要GUOO对账/结算明细才能反推。</div></div>';document.getElementById('pg-finance').innerHTML=html;
+};
+function v7SaveFinance(){const all=DB.get('manualKPI',{});all[todayStr()]={date:todayStr(),gmv:+val('fin-gmv')||0,ozon:+val('fin-ozon')||0,partner:+val('fin-partner')||0,delivery:+val('fin-delivery')||0,discount:+val('fin-discount')||0,cost:+val('fin-cost')||0};DB.set('manualKPI',all);showToast('今日账单已保存');RENDER.finance()}
 // 10. 设置
 RENDER.settings=function(){
   document.getElementById('hdr-d').textContent='系统设置';
@@ -1089,7 +1173,7 @@ RENDER.settings=function(){
   html+='<div class="sh-r"><div class="sh-t"><span class="e">🗑️</span>数据管理</div></div>';
   html+='<div class="cd"><button class="btn btn-o btn-blk" onclick="exportData()">📤 导出全部数据</button><button class="btn btn-blk" style="margin-top:8px;" onclick="importData()">📥 导入备份数据</button><button class="btn btn-blk" style="margin-top:8px;color:var(--red);" onclick="clearData()">🗑️ 清除全部数据</button></div>';
 
-  html+='<div class="cd" style="text-align:center;font-size:12px;color:var(--text3);">Ozon卖家工作台 v6.1<br>新增：🛒选品引擎 · 修正真实汇率(1₽≈¥0.083) · 🔔提醒通知 · 🧮利润测算<br>© 2026 邢怀振</div>';
+  html+='<div class="cd" style="text-align:center;font-size:12px;color:var(--text3);">Ozon FBS专业工作台 v7.0<br>新增：🛒选品引擎 · 修正真实汇率(1₽≈¥0.083) · 🔔提醒通知 · 🧮利润测算<br>© 2026 邢怀振</div>';
   document.getElementById('pg-settings').innerHTML=html;
 };
 
